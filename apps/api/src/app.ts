@@ -2,6 +2,7 @@ import express, { NextFunction, Request, Response } from "express";
 import cors from "cors";
 import { authRouter } from "./auth/auth.routes";
 import { HttpError } from "./auth/auth.service";
+import { resourcesRouter } from "./resources/resources.routes";
 
 export const app = express();
 
@@ -13,6 +14,7 @@ app.get("/health", (_req, res) => {
 });
 
 app.use("/auth", authRouter);
+app.use("/resources", resourcesRouter);
 
 app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
   if (err instanceof HttpError) {
