@@ -1,5 +1,7 @@
 import { Router } from "express";
 import { loginUser, registerUser } from "./auth.service";
+import { requireAuth } from "./auth.middleware";
+import { prisma } from "../db";
 
 export const authRouter = Router();
 
@@ -39,6 +41,15 @@ authRouter.post("/login", async (req, res, next) => {
 
     const result = await loginUser({ email, password });
     res.json(result);
+  } catch (err) {
+    next(err);
+  }
+});
+
+authRouter.get("/me", requireAuth, async (req, res, next) => {
+  try {
+    const user = await prisma.user.findUnique({ where: { id: req.user!.id } });
+    res.json({ id: user!.id, name: user!.name, email: user!.email, role: user!.role });
   } catch (err) {
     next(err);
   }
