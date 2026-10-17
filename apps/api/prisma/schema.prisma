@@ -1,0 +1,76 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  employee
+  admin
+}
+
+enum ResourceType {
+  room
+  desk
+}
+
+enum BookingStatus {
+  confirmed
+  cancelled
+}
+
+model User {
+  id           String   @id @default(uuid()) @db.Uuid
+  name         String
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  role         Role     @default(employee)
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  bookings Booking[]
+
+  @@map("users")
+}
+
+model Resource {
+  id          String       @id @default(uuid()) @db.Uuid
+  name        String       @unique
+  type        ResourceType
+  floor       String?
+  capacity    Int          @default(1)
+  description String?
+  isActive    Boolean      @default(true) @map("is_active")
+
+  bookings Booking[]
+
+  @@map("resources")
+}
+
+model Booking {
+  id          String        @id @default(uuid()) @db.Uuid
+  resourceId  String        @map("resource_id") @db.Uuid
+  userId      String        @map("user_id") @db.Uuid
+  title       String
+  startAt     DateTime      @map("start_at") @db.Timestamptz(6)
+  endAt       DateTime      @map("end_at") @db.Timestamptz(6)
+  status      BookingStatus @default(confirmed)
+  createdAt   DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  cancelledAt DateTime?     @map("cancelled_at") @db.Timestamptz(6)
+
+  resource Resource @relation(fields: [resourceId], references: [id])
+  user     User     @relation(fields: [userId], references: [id])
+
+  @@index([userId, startAt])
+  @@index([resourceId, startAt])
+  @@map("bookings")
+}
