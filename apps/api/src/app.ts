@@ -3,6 +3,8 @@ import cors from "cors";
 import { authRouter } from "./auth/auth.routes";
 import { HttpError } from "./auth/auth.service";
 import { resourcesRouter } from "./resources/resources.routes";
+import { bookingsRouter } from "./bookings/bookings.routes";
+import { availabilityRouter } from "./availability/availability.routes";
 
 export const app = express();
 
@@ -15,6 +17,8 @@ app.get("/health", (_req, res) => {
 
 app.use("/auth", authRouter);
 app.use("/resources", resourcesRouter);
+app.use("/bookings", bookingsRouter);
+app.use("/availability", availabilityRouter);
 
 app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
   if (err instanceof HttpError) {

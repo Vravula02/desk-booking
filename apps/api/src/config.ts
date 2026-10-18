@@ -9,4 +9,8 @@ function required(name: string): string {
 export const config = {
   jwtSecret: required("JWT_SECRET"),
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || "8h",
+  officeTimezone: process.env.OFFICE_TIMEZONE || "America/New_York",
+  openHour: Number(process.env.OPEN_HOUR) || 9,
+  closeHour: Number(process.env.CLOSE_HOUR) || 18,
+  maxBookingMinutes: Number(process.env.MAX_BOOKING_MINUTES) || 240,
 };
