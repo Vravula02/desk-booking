@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { clearSession, getSavedUser, type User } from "./api";
 import LoginPage from "./LoginPage";
+import SearchPage from "./SearchPage";
+
 export default function App() {
   const [user, setUser] = useState<User | null>(getSavedUser());
 
@@ -21,6 +23,7 @@ export default function App() {
       >
         Log out
       </button>
+      <SearchPage />
     </div>
   );
 }
