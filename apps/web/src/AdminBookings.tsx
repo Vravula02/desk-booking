@@ -46,7 +46,7 @@ export default function AdminBookings() {
     }
   }
 
-  return (
+    return (
     <div>
       <h3>Admin: all bookings</h3>
       {message && <p>{message}</p>}
@@ -55,9 +55,12 @@ export default function AdminBookings() {
         {bookings.map((b) => (
           <li key={b.id}>
             {b.resource.name}: {b.title} by {b.user.name} ({b.user.email}),{" "}
-            {formatTime(b.startAt)} to {formatTime(b.endAt)} ({b.status}){" "}
+            {formatTime(b.startAt)} to {formatTime(b.endAt)}{" "}
+            <span className={`badge badge-${b.status}`}>{b.status}</span>{" "}
             {b.status === "confirmed" && (
-              <button onClick={() => handleCancel(b.id)}>Cancel</button>
+              <button className="btn-danger" onClick={() => handleCancel(b.id)}>
+                Cancel
+              </button>
             )}
           </li>
         ))}
