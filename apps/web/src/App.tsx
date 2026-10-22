@@ -4,6 +4,7 @@ import LoginPage from "./LoginPage";
 import SearchPage from "./SearchPage";
 import MyBookingsPage from "./MyBookingsPage";
 import AdminPage from "./AdminPage";
+import AdminBookings from "./AdminBookings";
 
 type Tab = "search" | "mine" | "admin";
 
@@ -61,7 +62,12 @@ export default function App() {
 
       {tab === "search" && <SearchPage />}
       {tab === "mine" && <MyBookingsPage />}
-      {tab === "admin" && user.role === "admin" && <AdminPage />}
+      {tab === "admin" && user.role === "admin" && (
+        <>
+          <AdminPage />
+          <AdminBookings />
+        </>
+      )}
     </div>
   );
 }
