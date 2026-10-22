@@ -44,24 +44,34 @@ export default function MyBookingsPage() {
       setMessage(err instanceof Error ? err.message : "Cancel failed");
     }
   }
+    const now = new Date();
+  const upcoming = bookings.filter((b) => new Date(b.endAt) >= now).reverse();
+  const past = bookings.filter((b) => new Date(b.endAt) < now);
+
+  function renderItem(b: Booking, canCancel: boolean) {
+    return (
+      <li key={b.id}>
+        {b.resource.name}: {b.title}, {formatTime(b.startAt)} to {formatTime(b.endAt)}{" "}
+        <span className={`badge badge-${b.status}`}>{b.status}</span>{" "}
+        {canCancel && b.status === "confirmed" && (
+          <button className="btn-danger" onClick={() => handleCancel(b.id)}>
+            Cancel
+          </button>
+        )}
+      </li>
+    );
+  }
+
   return (
     <div>
-      <h3>My bookings</h3>
+      <h3>Upcoming bookings</h3>
       {message && <p>{message}</p>}
-      {bookings.length === 0 && <p>No bookings yet.</p>}
-      <ul>
-        {bookings.map((b) => (
-          <li key={b.id}>
-            {b.resource.name}: {b.title}, {formatTime(b.startAt)} to {formatTime(b.endAt)}{" "}
-            <span className={`badge badge-${b.status}`}>{b.status}</span>{" "}
-            {b.status === "confirmed" && (
-              <button className="btn-danger" onClick={() => handleCancel(b.id)}>
-                Cancel
-              </button>
-            )}
-          </li>
-        ))}
-      </ul>
+      {upcoming.length === 0 && <p>No upcoming bookings.</p>}
+      <ul>{upcoming.map((b) => renderItem(b, true))}</ul>
+
+      <h3>Past bookings</h3>
+      {past.length === 0 && <p>No past bookings.</p>}
+      <ul>{past.map((b) => renderItem(b, false))}</ul>
     </div>
   );
 }
