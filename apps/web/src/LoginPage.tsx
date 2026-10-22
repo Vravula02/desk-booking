@@ -28,27 +28,50 @@ export default function LoginPage({ onLogin }: Props) {
   }
 
   return (
-    <div style={{ maxWidth: 320, margin: "60px auto", fontFamily: "sans-serif" }}>
-      <h2>{mode === "login" ? "Log in" : "Create account"}</h2>
-      <form onSubmit={handleSubmit} style={{ display: "grid", gap: 8 }}>
-        {mode === "register" && (
-          <input placeholder="Name" value={name} onChange={(e) => setName(e.target.value)} />
-        )}
-        <input placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} />
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
-        <button type="submit">{mode === "login" ? "Log in" : "Register"}</button>
-      </form>
-      {error && <p style={{ color: "crimson" }}>{error}</p>}
-      <p>
-        <button onClick={() => setMode(mode === "login" ? "register" : "login")}>
+    <div className="login-wrap">
+      <div className="login-card">
+        <h1>Workspace Booking</h1>
+        <p className="tagline">Reserve meeting rooms and desks in seconds.</p>
+
+        <h2>{mode === "login" ? "Log in to your account" : "Create your account"}</h2>
+        <form onSubmit={handleSubmit}>
+          {mode === "register" && (
+            <input
+              placeholder="Full name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+            />
+          )}
+          <input
+            type="email"
+            placeholder="Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+          />
+          <input
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+          />
+          <button type="submit">{mode === "login" ? "Log in" : "Register"}</button>
+        </form>
+
+        {error && <p className="error">{error}</p>}
+
+        <button
+          className="link-btn"
+          onClick={() => {
+            setError("");
+            setMode(mode === "login" ? "register" : "login");
+          }}
+        >
           {mode === "login" ? "Need an account? Register" : "Have an account? Log in"}
         </button>
-      </p>
+      </div>
     </div>
   );
 }

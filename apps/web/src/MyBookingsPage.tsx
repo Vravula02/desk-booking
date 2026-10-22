@@ -44,7 +44,6 @@ export default function MyBookingsPage() {
       setMessage(err instanceof Error ? err.message : "Cancel failed");
     }
   }
-
   return (
     <div>
       <h3>My bookings</h3>
@@ -53,9 +52,12 @@ export default function MyBookingsPage() {
       <ul>
         {bookings.map((b) => (
           <li key={b.id}>
-            {b.resource.name}: {b.title}, {formatTime(b.startAt)} to {formatTime(b.endAt)} ({b.status}){" "}
+            {b.resource.name}: {b.title}, {formatTime(b.startAt)} to {formatTime(b.endAt)}{" "}
+            <span className={`badge badge-${b.status}`}>{b.status}</span>{" "}
             {b.status === "confirmed" && (
-              <button onClick={() => handleCancel(b.id)}>Cancel</button>
+              <button className="btn-danger" onClick={() => handleCancel(b.id)}>
+                Cancel
+              </button>
             )}
           </li>
         ))}

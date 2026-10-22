@@ -15,8 +15,11 @@ export default function SearchPage() {
   const [end, setEnd] = useState("");
   const [type, setType] = useState("");
   const [results, setResults] = useState<Resource[] | null>(null);
-  const [title, setTitle] = useState("");
   const [message, setMessage] = useState("");
+
+  // The resource the user clicked Book on (null = dialog closed)
+  const [selected, setSelected] = useState<Resource | null>(null);
+  const [title, setTitle] = useState("");
 
   async function handleSearch(e: React.FormEvent) {
     e.preventDefault();
@@ -37,27 +40,31 @@ export default function SearchPage() {
     }
   }
 
-  async function handleBook(resourceId: string) {
+  function openDialog(resource: Resource) {
     setMessage("");
-    if (new Date(end) <= new Date(start)) {
-      setMessage("End time must be after start time");
-      return;
-    }
+    setTitle("");
+    setSelected(resource);
+  }
+
+  async function handleConfirm(e: React.FormEvent) {
+    e.preventDefault();
+    if (!selected) return;
     try {
       await api("/bookings", {
         method: "POST",
         body: JSON.stringify({
-          resourceId,
-          title: title || "Booking",
+          resourceId: selected.id,
+          title: title.trim() || "Booking",
           startAt: new Date(start).toISOString(),
           endAt: new Date(end).toISOString(),
         }),
       });
-      setMessage("Booked!");
+      setMessage(`Booked ${selected.name}!`);
       setResults(null);
     } catch (err) {
       setMessage(err instanceof Error ? err.message : "Booking failed");
     }
+    setSelected(null);
   }
 
   return (
@@ -65,17 +72,18 @@ export default function SearchPage() {
       <h3>Search and book</h3>
       <form onSubmit={handleSearch} style={{ display: "grid", gap: 8, maxWidth: 320 }}>
         <label>
-          Start <input type="datetime-local" value={start} onChange={(e) => setStart(e.target.value)} required />
+          Start{" "}
+          <input type="datetime-local" value={start} onChange={(e) => setStart(e.target.value)} required />
         </label>
         <label>
-          End <input type="datetime-local" value={end} onChange={(e) => setEnd(e.target.value)} required />
+          End{" "}
+          <input type="datetime-local" value={end} onChange={(e) => setEnd(e.target.value)} required />
         </label>
         <select value={type} onChange={(e) => setType(e.target.value)}>
           <option value="">Rooms and desks</option>
           <option value="room">Rooms</option>
           <option value="desk">Desks</option>
         </select>
-        <input placeholder="Booking title" value={title} onChange={(e) => setTitle(e.target.value)} />
         <button type="submit">Search</button>
       </form>
 
@@ -87,10 +95,32 @@ export default function SearchPage() {
           {results.map((r) => (
             <li key={r.id}>
               {r.name} ({r.type}, capacity {r.capacity}){" "}
-              <button onClick={() => handleBook(r.id)}>Book</button>
+              <button onClick={() => openDialog(r)}>Book</button>
             </li>
           ))}
         </ul>
+      )}
+
+      {selected && (
+        <div className="modal-backdrop" onClick={() => setSelected(null)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <h3>Book {selected.name}</h3>
+            <form onSubmit={handleConfirm} style={{ display: "grid", gap: 10 }}>
+              <input
+                autoFocus
+                placeholder="Meeting or booking title"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+              />
+              <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+                <button type="button" onClick={() => setSelected(null)}>
+                  Cancel
+                </button>
+                <button type="submit">Confirm booking</button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
     </div>
   );

@@ -39,7 +39,7 @@ export default function App() {
       <header
         style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}
       >
-        <strong>WorkSpace Booking</strong>
+        <strong style={{ fontSize: "1.3rem", color: "#2563eb" }}>Workspace Booking</strong>
         <span>
           {user.name} ({user.role}){" "}
           <button
