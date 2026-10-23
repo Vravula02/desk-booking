@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { requireAuth } from "../auth/auth.middleware";
-import { searchAvailable } from "./availability.service";
+import { getTimeline, searchAvailable } from "./availability.service";
 
 export const availabilityRouter = Router();
 
@@ -26,6 +26,26 @@ availabilityRouter.get("/search", requireAuth, async (req, res, next) => {
     }
 
     res.json(await searchAvailable({ start, end, type, minCapacity }));
+  } catch (err) {
+    next(err);
+  }
+});
+
+availabilityRouter.get("/timeline", requireAuth, async (req, res, next) => {
+  try {
+    const start = new Date(String(req.query.start));
+    const end = new Date(String(req.query.end));
+
+    if (isNaN(start.getTime()) || isNaN(end.getTime()) || end <= start) {
+      return res.status(400).json({
+        error: {
+          code: "VALIDATION_ERROR",
+          message: "start and end (ISO format, end after start) are required",
+        },
+      });
+    }
+
+    res.json(await getTimeline(start, end, req.user!.id));
   } catch (err) {
     next(err);
   }
