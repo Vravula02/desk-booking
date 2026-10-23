@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { api } from "./api";
+import { showToast } from "./toast";
 
 type Booking = {
   id: string;
@@ -21,14 +22,16 @@ function formatTime(iso: string) {
 
 export default function AdminBookings() {
   const [bookings, setBookings] = useState<Booking[]>([]);
-  const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [cancellingId, setCancellingId] = useState<string | null>(null);
 
   async function load() {
     try {
       setBookings(await api<Booking[]>("/bookings"));
     } catch (err) {
-      setMessage(err instanceof Error ? err.message : "Could not load bookings");
+      showToast(err instanceof Error ? err.message : "Could not load bookings", "error");
     }
+    setLoading(false);
   }
 
   useEffect(() => {
@@ -37,20 +40,22 @@ export default function AdminBookings() {
   }, []);
 
   async function handleCancel(id: string) {
-    setMessage("");
+    setCancellingId(id);
     try {
       await api(`/bookings/${id}/cancel`, { method: "POST" });
+      showToast("Booking cancelled");
       await load();
     } catch (err) {
-      setMessage(err instanceof Error ? err.message : "Cancel failed");
+      showToast(err instanceof Error ? err.message : "Cancel failed", "error");
     }
+    setCancellingId(null);
   }
 
-    return (
+  return (
     <div>
       <h3>Admin: all bookings</h3>
-      {message && <p>{message}</p>}
-      {bookings.length === 0 && <p>No bookings.</p>}
+      {loading && <p>Loading bookings...</p>}
+      {!loading && bookings.length === 0 && <p>No bookings.</p>}
       <ul>
         {bookings.map((b) => (
           <li key={b.id}>
@@ -58,8 +63,12 @@ export default function AdminBookings() {
             {formatTime(b.startAt)} to {formatTime(b.endAt)}{" "}
             <span className={`badge badge-${b.status}`}>{b.status}</span>{" "}
             {b.status === "confirmed" && (
-              <button className="btn-danger" onClick={() => handleCancel(b.id)}>
-                Cancel
+              <button
+                className="btn-danger"
+                disabled={cancellingId === b.id}
+                onClick={() => handleCancel(b.id)}
+              >
+                {cancellingId === b.id ? "Cancelling..." : "Cancel"}
               </button>
             )}
           </li>

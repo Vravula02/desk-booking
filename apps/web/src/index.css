@@ -207,3 +207,156 @@ button.btn-danger:hover {
 .modal h3 {
   margin-top: 0;
 }
+
+/* Timeline */
+.tl-row {
+  display: grid;
+  grid-template-columns: 110px 1fr;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.tl-hours {
+  display: grid;
+  grid-template-columns: repeat(9, 1fr);
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.tl-track {
+  position: relative;
+  height: 34px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: repeating-linear-gradient(
+    to right,
+    #fff 0,
+    #fff calc(100% / 9 - 1px),
+    var(--border) calc(100% / 9 - 1px),
+    var(--border) calc(100% / 9)
+  );
+}
+
+.tl-bar {
+  position: absolute;
+  top: 3px;
+  bottom: 3px;
+  background: #9ca3af;
+  border-radius: 4px;
+}
+
+.tl-bar.mine {
+  background: var(--primary);
+}
+
+.tl-key {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  vertical-align: middle;
+  margin-right: 4px;
+}
+
+/* App layout */
+.app-shell {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.app-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.brand {
+  font-size: 1.3rem;
+  color: var(--primary);
+}
+
+.tabs {
+  display: flex;
+  margin: 16px 0;
+  border-bottom: 1px solid var(--border);
+  overflow-x: auto;
+}
+
+button.tab {
+  border: none;
+  border-bottom: 3px solid transparent;
+  border-radius: 0;
+  background: none;
+  padding: 8px 14px;
+  white-space: nowrap;
+}
+
+button.tab:hover {
+  background: #eef2ff;
+}
+
+button.tab.active {
+  border-bottom-color: var(--primary);
+  font-weight: bold;
+}
+
+li {
+  overflow-wrap: anywhere;
+}
+
+/* Phones */
+@media (max-width: 600px) {
+  .app-shell {
+    padding: 12px;
+  }
+
+  button {
+    min-height: 38px;
+  }
+
+  input,
+  select {
+    min-height: 38px;
+    box-sizing: border-box;
+  }
+
+  .login-card {
+    padding: 24px;
+  }
+}
+
+/* Toasts */
+.toasts {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  display: grid;
+  gap: 8px;
+  z-index: 100;
+  max-width: calc(100vw - 32px);
+}
+
+.toast {
+  padding: 10px 16px;
+  border-radius: 8px;
+  color: #fff;
+  box-shadow: 0 6px 20px rgba(31, 41, 55, 0.25);
+  font-size: 0.95rem;
+}
+
+.toast-success {
+  background: #16a34a;
+}
+
+.toast-error {
+  background: #dc2626;
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

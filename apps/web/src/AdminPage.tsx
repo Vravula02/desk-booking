@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { api } from "./api";
+import { showToast } from "./toast";
 
 type Resource = {
   id: string;
@@ -12,17 +13,20 @@ type Resource = {
 
 export default function AdminPage() {
   const [resources, setResources] = useState<Resource[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [adding, setAdding] = useState(false);
+  const [busyId, setBusyId] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [type, setType] = useState("room");
   const [capacity, setCapacity] = useState("4");
-  const [message, setMessage] = useState("");
 
   async function load() {
     try {
       setResources(await api<Resource[]>("/resources?includeInactive=true"));
     } catch (err) {
-      setMessage(err instanceof Error ? err.message : "Could not load resources");
+      showToast(err instanceof Error ? err.message : "Could not load resources", "error");
     }
+    setLoading(false);
   }
 
   useEffect(() => {
@@ -32,55 +36,62 @@ export default function AdminPage() {
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
-    setMessage("");
+    setAdding(true);
     try {
       await api("/resources", {
         method: "POST",
         body: JSON.stringify({ name, type, capacity: Number(capacity) }),
       });
+      showToast(`Added ${name}`);
       setName("");
       await load();
     } catch (err) {
-      setMessage(err instanceof Error ? err.message : "Create failed");
+      showToast(err instanceof Error ? err.message : "Create failed", "error");
     }
+    setAdding(false);
   }
 
   async function handleToggle(r: Resource) {
-    setMessage("");
+    setBusyId(r.id);
     try {
       const result = await api<{ cancelledBookings: number }>(`/resources/${r.id}/active`, {
         method: "POST",
         body: JSON.stringify({ isActive: !r.isActive }),
       });
-      if (r.isActive) {
-        setMessage(`Deactivated. ${result.cancelledBookings} future booking(s) cancelled.`);
-      }
+      showToast(
+        r.isActive
+          ? `Deactivated ${r.name}. ${result.cancelledBookings} future booking(s) cancelled.`
+          : `Reactivated ${r.name}`
+      );
       await load();
     } catch (err) {
-      setMessage(err instanceof Error ? err.message : "Update failed");
+      showToast(err instanceof Error ? err.message : "Update failed", "error");
     }
+    setBusyId(null);
   }
 
-async function handleEdit(r: Resource) {
+  async function handleEdit(r: Resource) {
     const input = window.prompt(`New capacity for ${r.name}:`, String(r.capacity));
-    if (input === null) return; // user pressed Cancel
+    if (input === null) return;
 
     const newCapacity = Number(input);
     if (!Number.isInteger(newCapacity) || newCapacity < 1) {
-      setMessage("Capacity must be a whole number, at least 1");
+      showToast("Capacity must be a whole number, at least 1", "error");
       return;
     }
 
-    setMessage("");
+    setBusyId(r.id);
     try {
       await api(`/resources/${r.id}`, {
         method: "PATCH",
         body: JSON.stringify({ capacity: newCapacity }),
       });
+      showToast(`${r.name} capacity set to ${newCapacity}`);
       await load();
     } catch (err) {
-      setMessage(err instanceof Error ? err.message : "Update failed");
+      showToast(err instanceof Error ? err.message : "Update failed", "error");
     }
+    setBusyId(null);
   }
 
   return (
@@ -99,17 +110,25 @@ async function handleEdit(r: Resource) {
           onChange={(e) => setCapacity(e.target.value)}
           style={{ width: 70 }}
         />
-        <button type="submit">Add</button>
+        <button type="submit" disabled={adding}>
+          {adding ? "Adding..." : "Add"}
+        </button>
       </form>
 
-      {message && <p>{message}</p>}
+      {loading && <p>Loading resources...</p>}
 
       <ul>
         {resources.map((r) => (
           <li key={r.id}>
             {r.name} ({r.type}, capacity {r.capacity}) {r.isActive ? "" : "[inactive]"}{" "}
-            <button onClick={() => handleEdit(r)}>Edit capacity</button>{" "}
-            <button onClick={() => handleToggle(r)}>
+            <button disabled={busyId === r.id} onClick={() => handleEdit(r)}>
+              Edit capacity
+            </button>{" "}
+            <button
+              className={r.isActive ? "btn-danger" : ""}
+              disabled={busyId === r.id}
+              onClick={() => handleToggle(r)}
+            >
               {r.isActive ? "Deactivate" : "Reactivate"}
             </button>
           </li>

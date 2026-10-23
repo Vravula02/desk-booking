@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { api } from "./api";
+import { showToast } from "./toast";
 
 type Resource = {
   id: string;
@@ -15,19 +16,18 @@ export default function SearchPage() {
   const [end, setEnd] = useState("");
   const [type, setType] = useState("");
   const [results, setResults] = useState<Resource[] | null>(null);
-  const [message, setMessage] = useState("");
-
-  // The resource the user clicked Book on (null = dialog closed)
+  const [searching, setSearching] = useState(false);
+  const [booking, setBooking] = useState(false);
   const [selected, setSelected] = useState<Resource | null>(null);
   const [title, setTitle] = useState("");
 
   async function handleSearch(e: React.FormEvent) {
     e.preventDefault();
-    setMessage("");
     if (new Date(end) <= new Date(start)) {
-      setMessage("End time must be after start time");
+      showToast("End time must be after start time", "error");
       return;
     }
+    setSearching(true);
     try {
       const params = new URLSearchParams({
         start: new Date(start).toISOString(),
@@ -36,12 +36,12 @@ export default function SearchPage() {
       if (type) params.set("type", type);
       setResults(await api<Resource[]>(`/availability/search?${params}`));
     } catch (err) {
-      setMessage(err instanceof Error ? err.message : "Search failed");
+      showToast(err instanceof Error ? err.message : "Search failed", "error");
     }
+    setSearching(false);
   }
 
   function openDialog(resource: Resource) {
-    setMessage("");
     setTitle("");
     setSelected(resource);
   }
@@ -49,6 +49,7 @@ export default function SearchPage() {
   async function handleConfirm(e: React.FormEvent) {
     e.preventDefault();
     if (!selected) return;
+    setBooking(true);
     try {
       await api("/bookings", {
         method: "POST",
@@ -59,11 +60,12 @@ export default function SearchPage() {
           endAt: new Date(end).toISOString(),
         }),
       });
-      setMessage(`Booked ${selected.name}!`);
+      showToast(`Booked ${selected.name}!`);
       setResults(null);
     } catch (err) {
-      setMessage(err instanceof Error ? err.message : "Booking failed");
+      showToast(err instanceof Error ? err.message : "Booking failed", "error");
     }
+    setBooking(false);
     setSelected(null);
   }
 
@@ -84,10 +86,16 @@ export default function SearchPage() {
           <option value="room">Rooms</option>
           <option value="desk">Desks</option>
         </select>
-        <button type="submit">Search</button>
+        <button type="submit" disabled={searching}>
+          {searching ? "Searching..." : "Search"}
+        </button>
       </form>
 
-      {message && <p>{message}</p>}
+      {searching && (
+        <p style={{ color: "var(--muted)" }}>
+          The first request after a quiet period can take up to 30 seconds.
+        </p>
+      )}
 
       {results && results.length === 0 && <p>Nothing available for that time.</p>}
       {results && results.length > 0 && (
@@ -116,7 +124,9 @@ export default function SearchPage() {
                 <button type="button" onClick={() => setSelected(null)}>
                   Cancel
                 </button>
-                <button type="submit">Confirm booking</button>
+                <button type="submit" disabled={booking}>
+                  {booking ? "Booking..." : "Confirm booking"}
+                </button>
               </div>
             </form>
           </div>
