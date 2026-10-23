@@ -2,11 +2,13 @@ import { useState } from "react";
 import { clearSession, getSavedUser, type User } from "./api";
 import LoginPage from "./LoginPage";
 import SearchPage from "./SearchPage";
+import TimelinePage from "./TimelinePage";
 import MyBookingsPage from "./MyBookingsPage";
 import AdminPage from "./AdminPage";
 import AdminBookings from "./AdminBookings";
+import ToastHost from "./ToastHost";
 
-type Tab = "search" | "mine" | "admin";
+type Tab = "search" | "timeline" | "mine" | "admin";
 
 export default function App() {
   const [user, setUser] = useState<User | null>(getSavedUser());
@@ -19,15 +21,8 @@ export default function App() {
   function tabButton(id: Tab, label: string) {
     return (
       <button
+        className={tab === id ? "tab active" : "tab"}
         onClick={() => setTab(id)}
-        style={{
-          padding: "6px 12px",
-          border: "none",
-          borderBottom: tab === id ? "3px solid #2563eb" : "3px solid transparent",
-          background: "none",
-          fontWeight: tab === id ? "bold" : "normal",
-          cursor: "pointer",
-        }}
       >
         {label}
       </button>
@@ -35,11 +30,10 @@ export default function App() {
   }
 
   return (
-    <div style={{ fontFamily: "sans-serif", maxWidth: 720, margin: "0 auto", padding: 24 }}>
-      <header
-        style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}
-      >
-        <strong style={{ fontSize: "1.3rem", color: "#2563eb" }}>Workspace Booking</strong>
+    <div className="app-shell">
+      <ToastHost />
+      <header className="app-header">
+        <strong className="brand">Workspace Booking</strong>
         <span>
           {user.name} ({user.role}){" "}
           <button
@@ -54,13 +48,15 @@ export default function App() {
         </span>
       </header>
 
-      <nav style={{ margin: "16px 0", borderBottom: "1px solid #ddd" }}>
+      <nav className="tabs">
         {tabButton("search", "Search and book")}
+        {tabButton("timeline", "Timeline")}
         {tabButton("mine", "My bookings")}
         {user.role === "admin" && tabButton("admin", "Admin")}
       </nav>
 
       {tab === "search" && <SearchPage />}
+      {tab === "timeline" && <TimelinePage />}
       {tab === "mine" && <MyBookingsPage />}
       {tab === "admin" && user.role === "admin" && (
         <>

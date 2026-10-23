@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { api } from "./api";
+import { showToast } from "./toast";
 
 type Booking = {
   id: string;
@@ -20,14 +21,16 @@ function formatTime(iso: string) {
 
 export default function MyBookingsPage() {
   const [bookings, setBookings] = useState<Booking[]>([]);
-  const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [cancellingId, setCancellingId] = useState<string | null>(null);
 
   async function load() {
     try {
       setBookings(await api<Booking[]>("/bookings/mine"));
     } catch (err) {
-      setMessage(err instanceof Error ? err.message : "Could not load bookings");
+      showToast(err instanceof Error ? err.message : "Could not load bookings", "error");
     }
+    setLoading(false);
   }
 
   useEffect(() => {
@@ -36,15 +39,18 @@ export default function MyBookingsPage() {
   }, []);
 
   async function handleCancel(id: string) {
-    setMessage("");
+    setCancellingId(id);
     try {
       await api(`/bookings/${id}/cancel`, { method: "POST" });
+      showToast("Booking cancelled");
       await load();
     } catch (err) {
-      setMessage(err instanceof Error ? err.message : "Cancel failed");
+      showToast(err instanceof Error ? err.message : "Cancel failed", "error");
     }
+    setCancellingId(null);
   }
-    const now = new Date();
+
+  const now = new Date();
   const upcoming = bookings.filter((b) => new Date(b.endAt) >= now).reverse();
   const past = bookings.filter((b) => new Date(b.endAt) < now);
 
@@ -54,18 +60,23 @@ export default function MyBookingsPage() {
         {b.resource.name}: {b.title}, {formatTime(b.startAt)} to {formatTime(b.endAt)}{" "}
         <span className={`badge badge-${b.status}`}>{b.status}</span>{" "}
         {canCancel && b.status === "confirmed" && (
-          <button className="btn-danger" onClick={() => handleCancel(b.id)}>
-            Cancel
+          <button
+            className="btn-danger"
+            disabled={cancellingId === b.id}
+            onClick={() => handleCancel(b.id)}
+          >
+            {cancellingId === b.id ? "Cancelling..." : "Cancel"}
           </button>
         )}
       </li>
     );
   }
 
+  if (loading) return <p>Loading your bookings...</p>;
+
   return (
     <div>
       <h3>Upcoming bookings</h3>
-      {message && <p>{message}</p>}
       {upcoming.length === 0 && <p>No upcoming bookings.</p>}
       <ul>{upcoming.map((b) => renderItem(b, true))}</ul>
 
