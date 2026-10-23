@@ -72,6 +72,14 @@ export default function SearchPage() {
   return (
     <div>
       <h3>Search and book</h3>
+      <div className="rules">
+        <strong>Booking rules</strong>
+        <div>Monday to Friday only</div>
+        <div>Between 9:00 AM and 6:00 PM, Eastern Time (New York)</div>
+        <div>Start and end on the same day</div>
+        <div>Up to 4 hours per booking</div>
+        <div>Start time must be in the future</div>
+      </div>
       <form onSubmit={handleSearch} style={{ display: "grid", gap: 8, maxWidth: 320 }}>
         <label>
           Start{" "}

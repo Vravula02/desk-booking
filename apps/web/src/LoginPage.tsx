@@ -10,9 +10,20 @@ export default function LoginPage({ onLogin }: Props) {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
+  const rules = {
+    length: password.length >= 8,
+    upper: /[A-Z]/.test(password),
+    special: /[^A-Za-z0-9]/.test(password),
+  };
+  const passwordOk = rules.length && rules.upper && rules.special;
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
+    if (mode === "register" && !passwordOk) {
+      setError("Password does not meet the rules below the password field");
+      return;
+    }
     try {
       const body =
         mode === "login" ? { email, password } : { name, email, password };
@@ -57,6 +68,19 @@ export default function LoginPage({ onLogin }: Props) {
             onChange={(e) => setPassword(e.target.value)}
             required
           />
+          {mode === "register" && (
+            <div className="hint">
+              <div className={rules.length ? "ok" : ""}>
+                {rules.length ? "✓" : "○"} At least 8 characters
+              </div>
+              <div className={rules.upper ? "ok" : ""}>
+                {rules.upper ? "✓" : "○"} One capital letter
+              </div>
+              <div className={rules.special ? "ok" : ""}>
+                {rules.special ? "✓" : "○"} One special character (for example ! @ # $)
+              </div>
+            </div>
+          )}
           <button type="submit">{mode === "login" ? "Log in" : "Register"}</button>
         </form>
 
