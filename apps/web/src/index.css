@@ -219,7 +219,7 @@ button.btn-danger:hover {
 
 .tl-hours {
   display: grid;
-  grid-template-columns: repeat(9, 1fr);
+  grid-template-columns: repeat(8, 1fr);
   font-size: 0.75rem;
   color: var(--muted);
 }
@@ -232,9 +232,9 @@ button.btn-danger:hover {
   background: repeating-linear-gradient(
     to right,
     #fff 0,
-    #fff calc(100% / 9 - 1px),
-    var(--border) calc(100% / 9 - 1px),
-    var(--border) calc(100% / 9)
+    #fff calc(100% / 24 - 1px),
+    var(--border) calc(100% / 24 - 1px),
+    var(--border) calc(100% / 24)
   );
 }
 
