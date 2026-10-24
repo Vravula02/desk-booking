@@ -7,17 +7,31 @@ export const authRouter = Router();
 
 authRouter.post("/register", async (req, res, next) => {
   try {
-    const { name, email, password } = req.body ?? {};
+        const { name, email, password } = req.body ?? {};
 
     if (
       typeof name !== "string" || name.trim() === "" ||
       typeof email !== "string" || !email.includes("@") ||
-      typeof password !== "string" || password.length < 8
+      typeof password !== "string"
     ) {
       return res.status(400).json({
         error: {
           code: "VALIDATION_ERROR",
-          message: "Name, a valid email, and a password of at least 8 characters are required",
+          message: "Name, a valid email, and a password are required",
+        },
+      });
+    }
+
+    if (
+      password.length < 8 ||
+      !/[A-Z]/.test(password) ||
+      !/[^A-Za-z0-9]/.test(password)
+    ) {
+      return res.status(400).json({
+        error: {
+          code: "WEAK_PASSWORD",
+          message:
+            "Password must be at least 8 characters and include a capital letter and a special character",
         },
       });
     }
