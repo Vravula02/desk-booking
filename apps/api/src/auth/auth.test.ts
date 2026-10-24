@@ -36,6 +36,14 @@ describe("register", () => {
       .send({ name: "Test", email: "x@example.com", password: "123" });
     expect(res.status).toBe(400);
   });
+
+  it("rejects a password without a capital letter or special character", async () => {
+    const res = await request(app)
+      .post("/auth/register")
+      .send({ name: "Test", email: "weak@example.com", password: "password123" });
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe("WEAK_PASSWORD");
+  });
 });
 
 describe("login", () => {

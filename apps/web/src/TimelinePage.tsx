@@ -9,23 +9,13 @@ type TimelineResource = {
   bookings: { id: string; startAt: string; endAt: string; isMine: boolean }[];
 };
 
-const OPEN = 9;
-const CLOSE = 18;
-const HOURS = CLOSE - OPEN;
+const HOURS = 24;
+const hourLabels = [0, 3, 6, 9, 12, 15, 18, 21];
 
 function todayString() {
   const d = new Date();
   const pad = (n: number) => String(n).padStart(2, "0");
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-}
-
-function hourOfDay(iso: string) {
-  const d = new Date(iso);
-  return d.getHours() + d.getMinutes() / 60;
-}
-
-function clamp(h: number) {
-  return Math.min(Math.max(h, OPEN), CLOSE);
 }
 
 function formatTime(iso: string) {
@@ -51,11 +41,15 @@ export default function TimelinePage() {
       }
       setLoading(false);
     }
-
     load();
   }, [date]);
 
-  const hourLabels = Array.from({ length: HOURS }, (_, i) => OPEN + i);
+  const dayStart = new Date(`${date}T00:00`).getTime();
+
+  function offsetHours(iso: string) {
+    const h = (new Date(iso).getTime() - dayStart) / 3600000;
+    return Math.min(Math.max(h, 0), HOURS);
+  }
 
   return (
     <div>
@@ -73,7 +67,7 @@ export default function TimelinePage() {
       {loading && <p>Loading...</p>}
 
       <div style={{ overflowX: "auto" }}>
-        <div style={{ minWidth: 560 }}>
+        <div style={{ minWidth: 640 }}>
           <div className="tl-row">
             <span />
             <div className="tl-hours">
@@ -94,14 +88,14 @@ export default function TimelinePage() {
               </span>
               <div className="tl-track">
                 {r.bookings.map((b) => {
-                  const s = clamp(hourOfDay(b.startAt));
-                  const e = clamp(hourOfDay(b.endAt));
+                  const s = offsetHours(b.startAt);
+                  const e = offsetHours(b.endAt);
                   return (
                     <div
                       key={b.id}
                       className={`tl-bar${b.isMine ? " mine" : ""}`}
                       style={{
-                        left: `${((s - OPEN) / HOURS) * 100}%`,
+                        left: `${(s / HOURS) * 100}%`,
                         width: `${((e - s) / HOURS) * 100}%`,
                       }}
                       title={`${formatTime(b.startAt)} to ${formatTime(b.endAt)}`}
