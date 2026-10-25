@@ -4,24 +4,25 @@ A full-stack app for booking meeting rooms and desks. Employees search for free 
 
 **Live demo:** https://salmon-plant-05427e20f.3.azurestaticapps.net
 
-> The API sleeps when idle (Azure Container Apps scales to zero), so the first request after a quiet period can take 10 to 30 seconds.
+> The API runs on Azure Container Apps.
 
 **Demo accounts** (the data is disposable, so these are public on purpose):
 
 | Role | Email | Password |
 |---|---|---|
-| Employee | `employee@example.com` | `Employee123!` |
 | Admin | `admin@example.com` | `Admin123!` |
+| Employee | `employee@example.com` | `Employee123!` |
+
 
 New accounts you register are always employees.
 
 ## Features
 
 **Everyone (logged in)**
-- Register and log in (email and password, JWT)
-- Search for rooms and desks free in a time window, filtered by type
-- Book from the results, with a pop-up dialog asking for the title
-- Day timeline: one row per resource, bars for booked time (blue for yours, grey for others)
+- Register and log in (email and password, JWT), with a live password checklist on the register form
+- Search for rooms and desks that are free in a time window, filtered by type
+- Book from the results, using a pop-up dialog for the booking title
+- Day timeline: one row per resource across 24 hours, with bars for booked time (blue for yours, grey for others)
 - My bookings, split into upcoming and past, with cancel
 - Toast messages, loading states, and a layout that works on phones
 
@@ -30,11 +31,12 @@ New accounts you register are always employees.
 - See every booking with who made it, and cancel any of them
 
 **Booking rules** (enforced by the API)
-- Monday to Friday, 9:00 to 18:00, office timezone (America/New_York)
-- Starts and ends on the same day, at most 4 hours, and starts in the future
+- Any day and any time
+- The start must be in the future
+- At most 4 hours per booking
 - No overlap with another confirmed booking for the same resource
 
-**Password rules** (new accounts): at least 8 characters, one capital letter, one special character.
+**Password rules** (new accounts): at least 8 characters, one capital letter, one special character. Login never checks these, so older accounts keep working.
 
 ## Tech stack
 
@@ -61,7 +63,7 @@ flowchart LR
     GHCR -->|pulled by| API
 ```
 
-The API follows one pattern throughout: **route** (HTTP, input checks) then **service** (business rules) then **Prisma** (database). A single error handler turns known errors into JSON responses and hides internals for unexpected ones.
+The API follows one pattern throughout: **route** (HTTP, input checks), then **service** (business rules), then **Prisma** (database). A single error handler turns known errors into JSON responses and hides internals for unexpected ones.
 
 ### How double booking is prevented
 
@@ -81,7 +83,7 @@ A test fires two bookings for the same slot at the same time and expects exactly
 | `resources` | Rooms and desks: unique name, type, floor, capacity, active flag |
 | `bookings` | Reservations: resource, user, title, start and end (UTC), status (`confirmed` or `cancelled`) |
 
-All times are stored in UTC (`timestamptz`) and shown in the office timezone.
+All times are stored in UTC (`timestamptz`).
 
 ## API
 
@@ -90,7 +92,7 @@ All endpoints except `/health` and `/auth/register|login` need `Authorization: B
 | Endpoint | Access | Purpose |
 |---|---|---|
 | `GET /health` | Public | Liveness check |
-| `POST /auth/register` | Public | Create an employee account, returns user and token |
+| `POST /auth/register` | Public | Create an employee account, returns user and token (`400` for a weak password, `409` if the email is taken) |
 | `POST /auth/login` | Public | Returns user and token |
 | `GET /auth/me` | Logged in | Current user |
 | `GET /resources` | Logged in | Active resources (admins can add `?includeInactive=true`) |
@@ -146,9 +148,9 @@ npm test
 | `JWT_SECRET` | long random string | Signs login tokens |
 | `JWT_EXPIRES_IN` | `8h` | Token lifetime |
 | `CORS_ORIGIN` | `http://localhost:5173` | The one site allowed to call the API from a browser |
-| `OFFICE_TIMEZONE` | `America/New_York` | Timezone for opening hours |
-| `OPEN_HOUR` / `CLOSE_HOUR` | `9` / `18` | Opening hours |
 | `MAX_BOOKING_MINUTES` | `240` | Longest booking |
+
+`OFFICE_TIMEZONE`, `OPEN_HOUR` and `CLOSE_HOUR` still exist in the config from an earlier version that limited bookings to office hours. The API no longer uses them.
 
 The web app reads `VITE_API_URL` (set in `apps/web/.env.production` for production builds) and falls back to `http://localhost:3000`.
 
@@ -173,23 +175,22 @@ docker-compose.yml     Local Postgres
 
 ## Design decisions and trade-offs
 
-- **Locking instead of a database constraint.** The first design used a Postgres exclusion constraint (needs the `btree_gist` extension). I switched to a transaction with a row lock, to avoid extensions and keep the rule easy to explain. The cost is that the rule lives in application code, so a manual SQL insert could bypass it. The concurrency test covers the application path. The early constraint migration is still in the history, followed by the one that removes it, because applied migrations are never rewritten.
+- **Locking instead of a database constraint.** The current rule lives in application code, so a manual SQL insert could bypass it. The concurrency test covers the application path. The early constraint migration is still in the history, followed by the one that removes it, because applied migrations are never rewritten.
 - **Single JWT, no refresh tokens.** Simpler, but a stolen token works until it expires (8 hours).
 - **Token in `localStorage`.** Simple, but exposed to cross-site scripting. HttpOnly cookies would be safer, at the price of more setup across two domains.
 - **User loaded from the database on every request.** One extra query, but deactivating a user or changing a role takes effect immediately.
-- **Hand-written validation, no Zod.** Fewer concepts for a first project.
+- **Password rules checked on the server and shown in the form.** The form only helps the user. The API is what enforces them.
 - **Employees can't self-register as admins.** Admins are created by seed or by a database update.
-- **Prisma pinned to v6**, because v7 changed how configuration works.
+- **Prisma pinned to v6**.
 - **Past bookings are kept.** They stay as history and never block new bookings.
 
 ## Known limitations
 
-- Times are entered in the browser's timezone and shown in New York time, which assumes the user is in the office timezone.
+- Times in the booking form and the timeline use the browser's timezone, while the booking lists show New York time. They match only for users in that timezone.
 - The booking rules text in the UI is typed in, so it must be updated by hand if the server settings change.
 - No password reset, email notifications, or admin screen for managing users.
-- A malformed (non-UUID) id in a URL returns a generic `500` instead of a `400`.
 - No automated frontend tests.
-- The API's first request after idle is slow (scale to zero).
+- A booking can't be edited, only cancelled and rebooked.
 
 ## Ideas for next steps
 
@@ -198,4 +199,5 @@ docker-compose.yml     Local Postgres
 - HttpOnly cookie sessions or refresh tokens
 - Zod validation shared between API and web
 - Recurring bookings, email reminders, and a utilization report
-- Frontend tests (Playwright)
+- Frontend tests
+- Enabling the booking to be edited
