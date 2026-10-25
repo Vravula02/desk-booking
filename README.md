@@ -2,7 +2,7 @@
 
 A full-stack app for booking meeting rooms and desks. Employees search for free rooms and desks in a time window, book one, and manage their bookings. Admins manage the resources and see every booking. Double bookings are prevented on the server, even when two people book at the same moment.
 
-**Live demo:** https://salmon-plant-05427e20f.3.azurestaticapps.net
+**Live demo:** [Desk Booking Application](https://salmon-plant-05427e20f.3.azurestaticapps.net)
 
 > The API runs on Azure Container Apps.
 
