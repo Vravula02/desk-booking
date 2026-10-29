@@ -13,4 +13,5 @@ export const config = {
   openHour: Number(process.env.OPEN_HOUR) || 9,
   closeHour: Number(process.env.CLOSE_HOUR) || 18,
   maxBookingMinutes: Number(process.env.MAX_BOOKING_MINUTES) || 240,
+  appUrl: process.env.APP_URL || process.env.CORS_ORIGIN || "http://localhost:5173",
 };
