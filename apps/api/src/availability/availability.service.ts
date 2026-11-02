@@ -24,7 +24,12 @@ export async function searchAvailable(input: {
   });
 }
 
-export async function getTimeline(start: Date, end: Date, userId: string) {
+export async function getTimeline(
+  start: Date,
+  end: Date,
+  userId: string,
+  isAdmin: boolean
+) {
   const resources = await prisma.resource.findMany({
     where: { isActive: true },
     orderBy: { name: "asc" },
@@ -35,7 +40,7 @@ export async function getTimeline(start: Date, end: Date, userId: string) {
           startAt: { lt: end },
           endAt: { gt: start },
         },
-        select: { id: true, startAt: true, endAt: true, userId: true },
+        select: { id: true, title: true, startAt: true, endAt: true, userId: true },
         orderBy: { startAt: "asc" },
       },
     },
@@ -46,11 +51,15 @@ export async function getTimeline(start: Date, end: Date, userId: string) {
     name: r.name,
     type: r.type,
     capacity: r.capacity,
-    bookings: r.bookings.map((b) => ({
-      id: b.id,
-      startAt: b.startAt,
-      endAt: b.endAt,
-      isMine: b.userId === userId,
-    })),
+    bookings: r.bookings.map((b) => {
+      const mine = b.userId === userId;
+      return {
+        id: b.id,
+        startAt: b.startAt,
+        endAt: b.endAt,
+        isMine: mine,
+        title: mine || isAdmin ? b.title : null,
+      };
+    }),
   }));
 }

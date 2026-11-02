@@ -45,7 +45,7 @@ availabilityRouter.get("/timeline", requireAuth, async (req, res, next) => {
       });
     }
 
-    res.json(await getTimeline(start, end, req.user!.id));
+    res.json(await getTimeline(start, end, req.user!.id, req.user!.role === "admin"));
   } catch (err) {
     next(err);
   }
