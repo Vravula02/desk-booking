@@ -48,3 +48,11 @@ export function tzLabel(tz: string): string {
   const now = DateTime.now().setZone(tz).setLocale("en-US");
   return `${now.offsetNameLong} (${now.offsetNameShort})`;
 }
+
+export function officeHour(value: Date, tz: string): number {
+  return DateTime.fromJSDate(value).setZone(tz).hour;
+}
+
+export function officeHourLabel(value: Date, tz: string): string {
+  return DateTime.fromJSDate(value).setZone(tz).setLocale("en-US").toFormat("h a");
+}
