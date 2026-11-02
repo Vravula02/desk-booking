@@ -5,6 +5,7 @@ import { HttpError } from "./auth/auth.service";
 import { resourcesRouter } from "./resources/resources.routes";
 import { bookingsRouter } from "./bookings/bookings.routes";
 import { availabilityRouter } from "./availability/availability.routes";
+import { config } from "./config";
 
 export const app = express();
 
@@ -13,6 +14,10 @@ app.use(express.json());
 
 app.get("/health", (_req, res) => {
   res.json({ status: "ok" });
+});
+
+app.get("/config", (_req, res) => {
+  res.json({ timezone: config.officeTimezone });
 });
 
 app.use("/auth", authRouter);

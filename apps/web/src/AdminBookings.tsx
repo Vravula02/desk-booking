@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { api } from "./api";
 import { showToast } from "./toast";
+import { useOfficeTz } from "./officeTimeContext";
+import { formatOfficeDateTime } from "./time";
 
 type Booking = {
   id: string;
@@ -12,15 +14,9 @@ type Booking = {
   user: { name: string; email: string };
 };
 
-function formatTime(iso: string) {
-  return new Date(iso).toLocaleString("en-US", {
-    timeZone: "America/New_York",
-    dateStyle: "medium",
-    timeStyle: "short",
-  });
-}
 
 export default function AdminBookings() {
+  const tz = useOfficeTz();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [cancellingId, setCancellingId] = useState<string | null>(null);
@@ -60,7 +56,7 @@ export default function AdminBookings() {
         {bookings.map((b) => (
           <li key={b.id}>
             {b.resource.name}: {b.title} by {b.user.name} ({b.user.email}),{" "}
-            {formatTime(b.startAt)} to {formatTime(b.endAt)}{" "}
+            {formatOfficeDateTime(b.startAt, tz)} to {formatOfficeDateTime(b.endAt, tz)}{" "}
             <span className={`badge badge-${b.status}`}>{b.status}</span>{" "}
             {b.status === "confirmed" && (
               <button

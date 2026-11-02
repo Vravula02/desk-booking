@@ -7,12 +7,16 @@ import MyBookingsPage from "./MyBookingsPage";
 import AdminPage from "./AdminPage";
 import AdminBookings from "./AdminBookings";
 import ToastHost from "./ToastHost";
+import OfficeTimeProvider from "./OfficeTimeProvider";
+import { useOfficeTz } from "./officeTimeContext";
+import { tzLabel } from "./time";
 
 type Tab = "search" | "timeline" | "mine" | "admin";
 
-export default function App() {
+function AppInner() {
   const [user, setUser] = useState<User | null>(getSavedUser());
   const [tab, setTab] = useState<Tab>("search");
+  const tz = useOfficeTz();
 
   if (!user) {
     return <LoginPage onLogin={setUser} />;
@@ -55,6 +59,10 @@ export default function App() {
         {user.role === "admin" && tabButton("admin", "Admin")}
       </nav>
 
+      <p className="hint" style={{ margin: "0 0 12px" }}>
+        All times are in {tzLabel(tz)}.
+      </p>
+
       {tab === "search" && <SearchPage />}
       {tab === "timeline" && <TimelinePage />}
       {tab === "mine" && <MyBookingsPage />}
@@ -65,5 +73,13 @@ export default function App() {
         </>
       )}
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <OfficeTimeProvider>
+      <AppInner />
+    </OfficeTimeProvider>
   );
 }
