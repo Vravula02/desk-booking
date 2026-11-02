@@ -97,7 +97,7 @@ export default function AdminPage() {
   return (
     <div>
       <h3>Admin: resources</h3>
-      <form onSubmit={handleCreate} style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+      <form onSubmit={handleCreate} className="form-row">
         <input placeholder="Name" value={name} onChange={(e) => setName(e.target.value)} required />
         <select value={type} onChange={(e) => setType(e.target.value)}>
           <option value="room">Room</option>
@@ -119,18 +119,23 @@ export default function AdminPage() {
 
       <ul>
         {resources.map((r) => (
-          <li key={r.id}>
-            {r.name} ({r.type}, capacity {r.capacity}) {r.isActive ? "" : "[inactive]"}{" "}
-            <button disabled={busyId === r.id} onClick={() => handleEdit(r)}>
-              Edit capacity
-            </button>{" "}
-            <button
-              className={r.isActive ? "btn-danger" : ""}
-              disabled={busyId === r.id}
-              onClick={() => handleToggle(r)}
-            >
-              {r.isActive ? "Deactivate" : "Reactivate"}
-            </button>
+          <li key={r.id} className="row">
+            <div className="row-main">
+              <strong>{r.name}</strong> ({r.type}, capacity {r.capacity}){" "}
+              {!r.isActive && <span className="badge badge-cancelled">inactive</span>}
+            </div>
+            <div className="row-actions">
+              <button disabled={busyId === r.id} onClick={() => handleEdit(r)}>
+                Edit capacity
+              </button>
+              <button
+                className={r.isActive ? "btn-danger" : ""}
+                disabled={busyId === r.id}
+                onClick={() => handleToggle(r)}
+              >
+                {r.isActive ? "Deactivate" : "Reactivate"}
+              </button>
+            </div>
           </li>
         ))}
       </ul>

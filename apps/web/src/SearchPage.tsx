@@ -267,9 +267,17 @@ export default function SearchPage() {
       {results && results.length > 0 && (
         <ul>
           {results.map((r) => (
-            <li key={r.id}>
-              {r.name} ({r.type}, capacity {r.capacity}){" "}
-              <button onClick={() => openDialog(r)}>Book</button>
+            <li key={r.id} className="row">
+              <div className="row-main">
+                <strong>{r.name}</strong>
+                <div className="meta">
+                  {r.type}, capacity {r.capacity}
+                  {r.floor ? `, floor ${r.floor}` : ""}
+                </div>
+              </div>
+              <div className="row-actions">
+                <button onClick={() => openDialog(r)}>Book</button>
+              </div>
             </li>
           ))}
         </ul>
