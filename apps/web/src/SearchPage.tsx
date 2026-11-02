@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { api } from "./api";
 import { showToast } from "./toast";
+import { useOfficeTz } from "./officeTimeContext";
+import { officeToUtc, officeToday } from "./time";
 
 type Resource = {
   id: string;
@@ -23,27 +25,28 @@ function hourLabel(h: string) {
   return `${n % 12 || 12} ${n >= 12 ? "PM" : "AM"}`;
 }
 
-function todayDate() {
-  const d = new Date();
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-}
-
 function timeStr(t: TimeParts) {
   return t.h && t.m ? `${t.h}:${t.m}` : "";
 }
 
-function toDate(date: string, time: string) {
-  return new Date(`${date}T${time}`);
+function isPast(date: string, slot: string, tz: string) {
+  return officeToUtc(date, slot, tz) <= new Date();
 }
 
-function isPast(date: string, slot: string) {
-  return toDate(date, slot) <= new Date();
-}
-
-function endIsDisabled(endDate: string, slot: string, startDate: string, startStr: string) {
+function endIsDisabled(
+  endDate: string,
+  slot: string,
+  startDate: string,
+  startStr: string,
+  tz: string
+) {
   if (!endDate) return false;
-  if (isPast(endDate, slot)) return true;
-  return !!startDate && !!startStr && toDate(endDate, slot) <= toDate(startDate, startStr);
+  if (isPast(endDate, slot, tz)) return true;
+  return (
+    !!startDate &&
+    !!startStr &&
+    officeToUtc(endDate, slot, tz) <= officeToUtc(startDate, startStr, tz)
+  );
 }
 
 function clean(t: TimeParts, isDisabled: (slot: string) => boolean): TimeParts {
@@ -100,6 +103,8 @@ function TimePicker({
 }
 
 export default function SearchPage() {
+  const tz = useOfficeTz();
+
   const [startDate, setStartDate] = useState("");
   const [startT, setStartT] = useState<TimeParts>(EMPTY);
   const [endDate, setEndDate] = useState("");
@@ -111,12 +116,12 @@ export default function SearchPage() {
   const [selected, setSelected] = useState<Resource | null>(null);
   const [title, setTitle] = useState("");
 
-  const today = todayDate();
+  const today = officeToday(tz);
   const startStr = timeStr(startT);
   const endStr = timeStr(endT);
 
   function updateStart(newDate: string, newT: TimeParts) {
-    const startDisabled = (slot: string) => newDate !== "" && isPast(newDate, slot);
+    const startDisabled = (slot: string) => newDate !== "" && isPast(newDate, slot, tz);
     const cleanedStart = clean(newT, startDisabled);
 
     let nextEndDate = endDate;
@@ -127,20 +132,20 @@ export default function SearchPage() {
     setEndDate(nextEndDate);
     setEndT(
       clean(endT, (slot) =>
-        endIsDisabled(nextEndDate, slot, newDate, timeStr(cleanedStart))
+        endIsDisabled(nextEndDate, slot, newDate, timeStr(cleanedStart), tz)
       )
     );
   }
 
   function updateEnd(newDate: string, newT: TimeParts) {
     setEndDate(newDate);
-    setEndT(clean(newT, (slot) => endIsDisabled(newDate, slot, startDate, startStr)));
+    setEndT(clean(newT, (slot) => endIsDisabled(newDate, slot, startDate, startStr, tz)));
   }
 
   async function handleSearch(e: React.FormEvent) {
     e.preventDefault();
-    const start = toDate(startDate, startStr);
-    const end = toDate(endDate, endStr);
+    const start = officeToUtc(startDate, startStr, tz);
+    const end = officeToUtc(endDate, endStr, tz);
 
     if (start <= new Date()) {
       showToast("Please select a future start time", "error");
@@ -180,8 +185,8 @@ export default function SearchPage() {
         body: JSON.stringify({
           resourceId: selected.id,
           title: title.trim() || "Booking",
-          startAt: toDate(startDate, startStr).toISOString(),
-          endAt: toDate(endDate, endStr).toISOString(),
+          startAt: officeToUtc(startDate, startStr, tz).toISOString(),
+          endAt: officeToUtc(endDate, endStr, tz).toISOString(),
         }),
       });
       showToast(`Booked ${selected.name}!`);
@@ -218,7 +223,7 @@ export default function SearchPage() {
             <TimePicker
               value={startT}
               onChange={(t) => updateStart(startDate, t)}
-              isDisabled={(slot) => startDate !== "" && isPast(startDate, slot)}
+              isDisabled={(slot) => startDate !== "" && isPast(startDate, slot, tz)}
             />
           </div>
         </label>
@@ -236,7 +241,7 @@ export default function SearchPage() {
             <TimePicker
               value={endT}
               onChange={(t) => updateEnd(endDate, t)}
-              isDisabled={(slot) => endIsDisabled(endDate, slot, startDate, startStr)}
+              isDisabled={(slot) => endIsDisabled(endDate, slot, startDate, startStr, tz)}
             />
           </div>
         </label>

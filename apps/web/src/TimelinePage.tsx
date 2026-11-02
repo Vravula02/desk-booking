@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { api } from "./api";
+import { useOfficeTz } from "./officeTimeContext";
+import { formatOfficeTime, officeDayRange, officeToday } from "./time";
 
 type TimelineResource = {
   id: string;
@@ -9,47 +11,46 @@ type TimelineResource = {
   bookings: { id: string; startAt: string; endAt: string; isMine: boolean }[];
 };
 
-const HOURS = 24;
-const hourLabels = [0, 3, 6, 9, 12, 15, 18, 21];
-
-function todayString() {
-  const d = new Date();
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-}
-
-function formatTime(iso: string) {
-  return new Date(iso).toLocaleTimeString("en-US", { timeStyle: "short" });
-}
+const LABEL_COUNT = 8;
 
 export default function TimelinePage() {
-  const [date, setDate] = useState(todayString());
+  const tz = useOfficeTz();
+  const [date, setDate] = useState(() => officeToday(tz));
   const [rows, setRows] = useState<TimelineResource[]>([]);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
+
+  const { start, end } = officeDayRange(date, tz);
+  const startMs = start.getTime();
+  const dayMs = end.getTime() - startMs; // 24 hours, or 23 or 25 on clock-change days
 
   useEffect(() => {
     async function load() {
       setLoading(true);
       setMessage("");
       try {
-        const start = new Date(`${date}T00:00`).toISOString();
-        const end = new Date(`${date}T23:59`).toISOString();
-        setRows(await api<TimelineResource[]>(`/availability/timeline?start=${start}&end=${end}`));
+        const range = officeDayRange(date, tz);
+        const params = new URLSearchParams({
+          start: range.start.toISOString(),
+          end: range.end.toISOString(),
+        });
+        setRows(await api<TimelineResource[]>(`/availability/timeline?${params}`));
       } catch (err) {
         setMessage(err instanceof Error ? err.message : "Could not load timeline");
       }
       setLoading(false);
     }
     load();
-  }, [date]);
+  }, [date, tz]);
 
-  const dayStart = new Date(`${date}T00:00`).getTime();
-
-  function offsetHours(iso: string) {
-    const h = (new Date(iso).getTime() - dayStart) / 3600000;
-    return Math.min(Math.max(h, 0), HOURS);
+  function fraction(iso: string) {
+    const f = (new Date(iso).getTime() - startMs) / dayMs;
+    return Math.min(Math.max(f, 0), 1);
   }
+
+  const labels = Array.from({ length: LABEL_COUNT }, (_, i) =>
+    formatOfficeTime(new Date(startMs + (i * dayMs) / LABEL_COUNT), tz)
+  );
 
   return (
     <div>
@@ -71,8 +72,8 @@ export default function TimelinePage() {
           <div className="tl-row">
             <span />
             <div className="tl-hours">
-              {hourLabels.map((h) => (
-                <span key={h}>{h}:00</span>
+              {labels.map((label, i) => (
+                <span key={i}>{label}</span>
               ))}
             </div>
           </div>
@@ -88,17 +89,14 @@ export default function TimelinePage() {
               </span>
               <div className="tl-track">
                 {r.bookings.map((b) => {
-                  const s = offsetHours(b.startAt);
-                  const e = offsetHours(b.endAt);
+                  const s = fraction(b.startAt);
+                  const e = fraction(b.endAt);
                   return (
                     <div
                       key={b.id}
                       className={`tl-bar${b.isMine ? " mine" : ""}`}
-                      style={{
-                        left: `${(s / HOURS) * 100}%`,
-                        width: `${((e - s) / HOURS) * 100}%`,
-                      }}
-                      title={`${formatTime(b.startAt)} to ${formatTime(b.endAt)}`}
+                      style={{ left: `${s * 100}%`, width: `${(e - s) * 100}%` }}
+                      title={`${formatOfficeTime(b.startAt, tz)} to ${formatOfficeTime(b.endAt, tz)}`}
                     />
                   );
                 })}
