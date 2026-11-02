@@ -68,6 +68,9 @@ export async function cancelBooking(
   if (booking.status !== "confirmed") {
     throw new HttpError(422, "INVALID_STATE", "Only confirmed bookings can be cancelled");
   }
+    if (booking.endAt <= new Date()) {
+    throw new HttpError(422, "BOOKING_ENDED", "Past bookings can't be cancelled");
+  }
 
   return prisma.booking.update({
     where: { id: bookingId },
