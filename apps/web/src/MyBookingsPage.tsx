@@ -50,6 +50,8 @@ export default function MyBookingsPage() {
   const past = bookings.filter((b) => new Date(b.endAt) < now);
 
   function renderItem(b: Booking, canCancel: boolean) {
+    const ended = new Date(b.endAt) <= now;
+    const status = b.status === "confirmed" && ended ? "completed" : b.status;
     return (
       <li key={b.id} className="row">
         <div className="row-main">
@@ -59,8 +61,8 @@ export default function MyBookingsPage() {
           </div>
         </div>
         <div className="row-actions">
-          <span className={`badge badge-${b.status}`}>{b.status}</span>
-          {canCancel && b.status === "confirmed" && (
+          <span className={`badge badge-${status}`}>{status}</span>
+          {canCancel && !ended && b.status === "confirmed" && (
             <button
               className="btn-danger"
               disabled={cancellingId === b.id}
