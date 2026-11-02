@@ -13,7 +13,6 @@ type Booking = {
   resource: { name: string; type: string };
 };
 
-
 export default function MyBookingsPage() {
   const tz = useOfficeTz();
   const [bookings, setBookings] = useState<Booking[]>([]);
@@ -52,18 +51,25 @@ export default function MyBookingsPage() {
 
   function renderItem(b: Booking, canCancel: boolean) {
     return (
-      <li key={b.id}>
-        {b.resource.name}: {b.title}, {formatOfficeDateTime(b.startAt, tz)} to {formatOfficeDateTime(b.endAt, tz)}{" "}
-        <span className={`badge badge-${b.status}`}>{b.status}</span>{" "}
-        {canCancel && b.status === "confirmed" && (
-          <button
-            className="btn-danger"
-            disabled={cancellingId === b.id}
-            onClick={() => handleCancel(b.id)}
-          >
-            {cancellingId === b.id ? "Cancelling..." : "Cancel"}
-          </button>
-        )}
+      <li key={b.id} className="row">
+        <div className="row-main">
+          <strong>{b.resource.name}</strong>: {b.title}
+          <div className="meta">
+            {formatOfficeDateTime(b.startAt, tz)} to {formatOfficeDateTime(b.endAt, tz)}
+          </div>
+        </div>
+        <div className="row-actions">
+          <span className={`badge badge-${b.status}`}>{b.status}</span>
+          {canCancel && b.status === "confirmed" && (
+            <button
+              className="btn-danger"
+              disabled={cancellingId === b.id}
+              onClick={() => handleCancel(b.id)}
+            >
+              {cancellingId === b.id ? "Cancelling..." : "Cancel"}
+            </button>
+          )}
+        </div>
       </li>
     );
   }

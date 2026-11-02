@@ -406,3 +406,173 @@ button:disabled {
 .link-row .link-btn {
   margin-top: 0;
 }
+/* Responsive pass */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+.app-shell {
+  max-width: 960px;
+}
+
+button:focus-visible,
+input:focus-visible,
+select:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+input[type="date"] {
+  min-width: 0;
+}
+
+select {
+  max-width: 100%;
+}
+
+li.row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+}
+
+.row-main {
+  flex: 1 1 240px;
+  min-width: 0;
+}
+
+.row-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.meta {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.form-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.form-row > input:not([type]),
+.form-row > input[type="text"] {
+  flex: 1 1 160px;
+  min-width: 0;
+}
+
+.tl-row > span:first-child {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: var(--bg);
+  padding-right: 4px;
+}
+
+@media (min-width: 900px) {
+  .app-shell {
+    padding: 32px;
+  }
+}
+
+@media (max-width: 600px) {
+  .tl-row {
+    grid-template-columns: 84px 1fr;
+  }
+
+  .row-actions {
+    width: 100%;
+  }
+
+  .row-actions button {
+    flex: 1;
+  }
+
+  h3 {
+    margin: 18px 0 10px;
+  }
+}
+
+@media (max-width: 380px) {
+  .app-shell {
+    padding: 8px;
+  }
+
+  button.tab {
+    padding: 8px 10px;
+  }
+
+  .login-card {
+    padding: 20px;
+  }
+}
+
+/* Phone polish */
+.login-wrap {
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+.modal {
+  max-height: 90vh;
+  max-height: 90dvh;
+  overflow-y: auto;
+}
+
+.tl-swipe {
+  display: none;
+}
+
+@media (max-width: 700px) {
+  .tl-swipe {
+    display: block;
+  }
+}
+
+@media (max-width: 600px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+
+  button:not(.link-btn) {
+    min-height: 44px;
+  }
+
+  button.link-btn {
+    min-height: 40px;
+  }
+
+  .tabs {
+    scrollbar-width: none;
+  }
+
+  .tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .toasts {
+    left: 12px;
+    right: 12px;
+    top: 12px;
+  }
+
+  .modal-backdrop {
+    padding: 12px;
+  }
+
+  .modal {
+    padding: 20px;
+  }
+}

@@ -67,6 +67,7 @@ export default function TimelinePage() {
       {message && <p className="error">{message}</p>}
       {loading && <p>Loading...</p>}
 
+      <p className="hint tl-swipe">Swipe sideways to see the whole day.</p>
       <div style={{ overflowX: "auto" }}>
         <div style={{ minWidth: 640 }}>
           <div className="tl-row">
