@@ -576,3 +576,34 @@ li.row {
     padding: 20px;
   }
 }
+/* Timeline marks */
+.tl-hours span {
+  color: var(--text);
+  font-weight: 500;
+  border-left: 2px solid var(--muted);
+  padding-left: 4px;
+}
+
+.tl-track {
+  background-color: #fff;
+  background-image:
+    repeating-linear-gradient(
+      to right,
+      var(--muted) 0,
+      var(--muted) 2px,
+      transparent 2px,
+      transparent calc(100% / 8)
+    ),
+    repeating-linear-gradient(
+      to right,
+      var(--border) 0,
+      var(--border) 1px,
+      transparent 1px,
+      transparent calc(100% / 24)
+    );
+}
+
+.badge-completed {
+  background: #e0e7ff;
+  color: #3730a3;
+}

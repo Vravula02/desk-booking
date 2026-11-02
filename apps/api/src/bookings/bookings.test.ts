@@ -51,4 +51,25 @@ describe("bookings", () => {
     const statuses = results.map((r) => r.status).sort();
     expect(statuses).toEqual([201, 409]);
   });
+
+  it("does not allow cancelling a booking that has ended", async () => {
+    const user = await prisma.user.findUniqueOrThrow({
+      where: { email: "employee@example.com" },
+    });
+    const past = await prisma.booking.create({
+      data: {
+        resourceId,
+        userId: user.id,
+        title: "TEST-past",
+        startAt: new Date("2020-01-07T15:00:00Z"),
+        endAt: new Date("2020-01-07T16:00:00Z"),
+      },
+    });
+
+    const res = await request(app)
+      .post(`/bookings/${past.id}/cancel`)
+      .set("Authorization", `Bearer ${token}`);
+    expect(res.status).toBe(422);
+    expect(res.body.error.code).toBe("BOOKING_ENDED");
+  });
 });
