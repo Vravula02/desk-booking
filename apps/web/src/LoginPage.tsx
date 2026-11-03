@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { api, saveSession, type User } from "./api";
 
-type Props = { onLogin: (user: User) => void };
+type Props = { onLogin: (user: User) => void; sessionMessage?: string };
 type Mode = "login" | "register" | "forgot" | "reset";
 type TokenStatus = "checking" | "valid" | "invalid" | "error" | null;
 
@@ -13,7 +13,7 @@ function clearResetFromUrl() {
   window.history.replaceState({}, "", window.location.pathname);
 }
 
-export default function LoginPage({ onLogin }: Props) {
+export default function LoginPage({ onLogin, sessionMessage }: Props) {
   const [resetToken, setResetToken] = useState<string | null>(getResetToken());
   const [tokenStatus, setTokenStatus] = useState<TokenStatus>(
     getResetToken() ? "checking" : null
@@ -242,6 +242,9 @@ export default function LoginPage({ onLogin }: Props) {
           </form>
         )}
 
+        {sessionMessage && mode === "login" && !notice && (
+          <p className="warn">{sessionMessage}</p>
+        )}
         {notice && <p className="notice">{notice}</p>}
         {error && <p className="error">{error}</p>}
 
