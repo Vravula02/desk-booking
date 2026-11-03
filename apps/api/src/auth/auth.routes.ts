@@ -3,6 +3,7 @@ import { loginUser, registerUser } from "./auth.service";
 import { requireAuth } from "./auth.middleware";
 import { prisma } from "../db";
 import {
+  COOLDOWN_SECONDS,
   isResetTokenValid,
   isStrongPassword,
   requestPasswordReset,
@@ -94,6 +95,7 @@ authRouter.post("/forgot", async (req, res, next) => {
 
     res.status(202).json({
       message: "If that email is registered, a reset link has been sent.",
+      retryAfterSeconds: COOLDOWN_SECONDS,
     });
   } catch (err) {
     next(err);
