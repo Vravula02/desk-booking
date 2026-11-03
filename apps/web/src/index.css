@@ -791,3 +791,11 @@ li.row {
     --tl-px: 32px;
   }
 }
+.warn {
+  color: #92400e;
+  background: #fef3c7;
+  border-radius: 6px;
+  padding: 8px 10px;
+  margin: 12px 0 0;
+  font-size: 0.9rem;
+}
