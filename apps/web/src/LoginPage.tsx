@@ -5,6 +5,32 @@ type Props = { onLogin: (user: User) => void; sessionMessage?: string };
 type Mode = "login" | "register" | "forgot" | "reset";
 type TokenStatus = "checking" | "valid" | "invalid" | "error" | null;
 
+const COOLDOWN_KEY = "forgot-cooldowns";
+const FALLBACK_COOLDOWN_SECONDS = 120; // only used if the server omits retryAfterSeconds
+
+function readCooldowns(): Record<string, number> {
+  try {
+    const raw = JSON.parse(localStorage.getItem(COOLDOWN_KEY) || "{}") as Record<string, number>;
+    const now = Date.now();
+    return Object.fromEntries(Object.entries(raw).filter(([, until]) => until > now));
+  } catch {
+    return {};
+  }
+}
+
+function writeCooldowns(map: Record<string, number>) {
+  try {
+    localStorage.setItem(COOLDOWN_KEY, JSON.stringify(map));
+  } catch {
+    /* storage may be unavailable */
+  }
+}
+
+function formatWait(ms: number) {
+  const s = Math.max(0, Math.ceil(ms / 1000));
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+}
+
 function getResetToken() {
   return new URLSearchParams(window.location.search).get("reset");
 }
@@ -26,6 +52,13 @@ export default function LoginPage({ onLogin, sessionMessage }: Props) {
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
+  const [cooldowns, setCooldowns] = useState(readCooldowns);
+  const [now, setNow] = useState(() => Date.now());
+
+  const emailKey = email.trim().toLowerCase();
+  const cooldownUntil = cooldowns[emailKey] ?? 0;
+  const remaining = cooldownUntil - now;
+  const waiting = remaining > 0;
 
   useEffect(() => {
     if (!resetToken) return;
@@ -49,6 +82,16 @@ export default function LoginPage({ onLogin, sessionMessage }: Props) {
     };
   }, [resetToken]);
 
+  useEffect(() => {
+    if (!cooldownUntil || cooldownUntil <= Date.now()) return;
+    const id = setInterval(() => {
+      const t = Date.now();
+      setNow(t);
+      if (t >= cooldownUntil) clearInterval(id);
+    }, 1000);
+    return () => clearInterval(id);
+  }, [cooldownUntil]);
+
   const needsRules = mode === "register" || mode === "reset";
   const showForm = mode !== "reset" || tokenStatus === "valid";
 
@@ -71,6 +114,7 @@ export default function LoginPage({ onLogin, sessionMessage }: Props) {
     setNotice("");
     setPassword("");
     setConfirm("");
+    setNow(Date.now());
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -89,6 +133,8 @@ export default function LoginPage({ onLogin, sessionMessage }: Props) {
       }
     }
 
+    if (mode === "forgot" && waiting) return;
+
     setBusy(true);
     try {
       if (mode === "login" || mode === "register") {
@@ -104,11 +150,16 @@ export default function LoginPage({ onLogin, sessionMessage }: Props) {
       }
 
       if (mode === "forgot") {
-        const result = await api<{ message: string }>("/auth/forgot", {
-          method: "POST",
-          body: JSON.stringify({ email }),
-        });
-        setNotice(result.message);
+        const result = await api<{ message: string; retryAfterSeconds?: number }>(
+          "/auth/forgot",
+          { method: "POST", body: JSON.stringify({ email }) }
+        );
+        const seconds = result.retryAfterSeconds ?? FALLBACK_COOLDOWN_SECONDS;
+        const next = { ...readCooldowns(), [emailKey]: Date.now() + seconds * 1000 };
+        writeCooldowns(next);
+        setCooldowns(next);
+        setNow(Date.now());
+        setNotice(`${result.message} Can't find it? Check your spam folder.`);
         return;
       }
 
@@ -149,6 +200,12 @@ export default function LoginPage({ onLogin, sessionMessage }: Props) {
     reset: "Update password",
   };
 
+  const submitLabel = busy
+    ? "Please wait..."
+    : mode === "forgot" && waiting
+      ? `Resend available in ${formatWait(remaining)}`
+      : buttonLabels[mode];
+
   return (
     <div className="login-wrap">
       <div className="login-card">
@@ -163,8 +220,8 @@ export default function LoginPage({ onLogin, sessionMessage }: Props) {
 
         {mode === "reset" && tokenStatus === "invalid" && (
           <p className="error">
-            This reset link is invalid or has expired. Reset links can only be used once and
-            expire after 30 minutes.
+            This reset link is invalid or has expired. Each link works once, and requesting a
+            new link cancels the previous one.
           </p>
         )}
 
@@ -175,7 +232,9 @@ export default function LoginPage({ onLogin, sessionMessage }: Props) {
         )}
 
         {mode === "forgot" && (
-          <p className="hint">Enter your email and we will send you a link to reset your password.</p>
+          <p className="hint">
+            Enter your email and we will send you a link to reset your password.
+          </p>
         )}
 
         {showForm && (
@@ -194,7 +253,10 @@ export default function LoginPage({ onLogin, sessionMessage }: Props) {
                 type="email"
                 placeholder="Email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  setNow(Date.now());
+                }}
                 required
               />
             )}
@@ -236,8 +298,8 @@ export default function LoginPage({ onLogin, sessionMessage }: Props) {
               </div>
             )}
 
-            <button type="submit" disabled={busy}>
-              {busy ? "Please wait..." : buttonLabels[mode]}
+            <button type="submit" disabled={busy || (mode === "forgot" && waiting)}>
+              {submitLabel}
             </button>
           </form>
         )}
