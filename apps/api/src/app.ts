@@ -6,6 +6,7 @@ import { resourcesRouter } from "./resources/resources.routes";
 import { bookingsRouter } from "./bookings/bookings.routes";
 import { availabilityRouter } from "./availability/availability.routes";
 import { config } from "./config";
+import { usersRouter } from "./users/users.routes";
 
 export const app = express();
 
@@ -23,6 +24,7 @@ app.get("/config", (_req, res) => {
 app.use("/auth", authRouter);
 app.use("/resources", resourcesRouter);
 app.use("/bookings", bookingsRouter);
+app.use("/users", usersRouter);
 app.use("/availability", availabilityRouter);
 
 app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
