@@ -1,6 +1,7 @@
 import { prisma } from "../db";
 import { HttpError } from "../auth/auth.service";
 import { checkBookingTimes } from "./rules";
+import { Prisma } from "@prisma/client";
 
 export async function createBooking(input: {
   userId: string;
@@ -78,12 +79,55 @@ export async function cancelBooking(
   });
 }
 
-export async function listAllBookings() {
-  return prisma.booking.findMany({
-    include: {
-      resource: { select: { name: true, type: true } },
-      user: { select: { name: true, email: true } },
-    },
-    orderBy: { startAt: "desc" },
-  });
+export type AdminBookingFilters = {
+  type?: "room" | "desk";
+  when?: "upcoming" | "past";
+  userId?: string;
+  sort: "newest" | "oldest" | "type" | "name";
+  limit: number;
+  offset: number;
+};
+
+export async function listBookingsForAdmin(f: AdminBookingFilters) {
+  const now = new Date();
+
+  const where: Prisma.BookingWhereInput = {
+    ...(f.userId ? { userId: f.userId } : {}),
+    ...(f.type ? { resource: { type: f.type } } : {}),
+    // Same rule as My bookings: a booking is past once its end time has passed
+    ...(f.when === "upcoming" ? { endAt: { gte: now } } : {}),
+    ...(f.when === "past" ? { endAt: { lt: now } } : {}),
+  };
+
+  // Every order ends with the id, so paging never repeats or skips a row
+  let orderBy: Prisma.BookingOrderByWithRelationInput[];
+  switch (f.sort) {
+    case "oldest":
+      orderBy = [{ startAt: "asc" }, { id: "asc" }];
+      break;
+    case "type": // rooms first, then desks (the enum is declared in that order)
+      orderBy = [{ resource: { type: "asc" } }, { startAt: "desc" }, { id: "asc" }];
+      break;
+    case "name":
+      orderBy = [{ resource: { name: "asc" } }, { startAt: "desc" }, { id: "asc" }];
+      break;
+    default:
+      orderBy = [{ startAt: "desc" }, { id: "asc" }];
+  }
+
+  const [items, total] = await Promise.all([
+    prisma.booking.findMany({
+      where,
+      orderBy,
+      skip: f.offset,
+      take: f.limit,
+      include: {
+        resource: { select: { name: true, type: true } },
+        user: { select: { name: true, email: true } },
+      },
+    }),
+    prisma.booking.count({ where }),
+  ]);
+
+  return { items, total };
 }
