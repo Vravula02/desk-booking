@@ -72,4 +72,12 @@ describe("bookings", () => {
     expect(res.status).toBe(422);
     expect(res.body.error.code).toBe("BOOKING_ENDED");
   });
+
+  it("lists the logged-in user's own bookings", async () => {
+    const res = await request(app)
+      .get("/bookings/mine")
+      .set("Authorization", `Bearer ${token}`);
+    expect(res.status).toBe(200);
+    expect(Array.isArray(res.body)).toBe(true);
+  });
 });

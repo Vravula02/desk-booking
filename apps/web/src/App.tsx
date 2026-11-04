@@ -1,18 +1,19 @@
 import { useEffect, useRef, useState } from "react";
 import {
+  api,
   clearSession,
   getSavedUser,
   getToken,
   onSessionExpired,
   tokenExpiryMs,
+  updateSavedUser,
   type User,
 } from "./api";
 import LoginPage from "./LoginPage";
 import SearchPage from "./SearchPage";
 import TimelinePage from "./TimelinePage";
 import MyBookingsPage from "./MyBookingsPage";
-import AdminPage from "./AdminPage";
-import AdminBookings from "./AdminBookings";
+import AdminSection from "./AdminSection";
 import ToastHost from "./ToastHost";
 import OfficeTimeProvider from "./OfficeTimeProvider";
 import { useOfficeTz } from "./officeTimeContext";
@@ -29,9 +30,11 @@ function AppInner() {
   const [sessionMessage, setSessionMessage] = useState("");
   const lastActivity = useRef(0);
   const tz = useOfficeTz();
+  const userId = user?.id ?? null;
 
+  // Log out on token expiry, a rejected session, or inactivity
   useEffect(() => {
-    if (!user) return;
+    if (!userId) return;
 
     function endSession(reason: string) {
       clearSession();
@@ -78,7 +81,41 @@ function AppInner() {
       activityEvents.forEach((name) => window.removeEventListener(name, markActive));
       stopListening();
     };
-  }, [user]);
+  }, [userId]);
+
+  // Keep the saved name and role in step with the server, so a promotion or
+  // demotion shows up without logging in again
+  useEffect(() => {
+    if (!userId) return;
+    let cancelled = false;
+
+    async function refresh() {
+      try {
+        const me = await api<User>("/auth/me");
+        if (cancelled) return;
+        updateSavedUser(me);
+        setUser((prev) =>
+          prev && (prev.role !== me.role || prev.name !== me.name || prev.email !== me.email)
+            ? me
+            : prev
+        );
+        if (me.role !== "admin") setTab((t) => (t === "admin" ? "search" : t));
+      } catch {
+        // Other requests handle an invalid session
+      }
+    }
+
+    refresh();
+    const onVisible = () => {
+      if (document.visibilityState === "visible") refresh();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+
+    return () => {
+      cancelled = true;
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, [userId]);
 
   if (!user) {
     return (
@@ -108,7 +145,7 @@ function AppInner() {
       <ToastHost />
       <header className="app-header">
         <strong className="brand">Workspace Booking</strong>
-        <span>
+        <span className="header-user">
           {user.name} ({user.role}){" "}
           <button
             onClick={() => {
@@ -137,12 +174,7 @@ function AppInner() {
       {tab === "search" && <SearchPage />}
       {tab === "timeline" && <TimelinePage />}
       {tab === "mine" && <MyBookingsPage />}
-      {tab === "admin" && user.role === "admin" && (
-        <>
-          <AdminPage />
-          <AdminBookings />
-        </>
-      )}
+      {tab === "admin" && user.role === "admin" && <AdminSection currentUserId={user.id} />}
     </div>
   );
 }
