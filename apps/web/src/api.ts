@@ -31,6 +31,10 @@ export function saveSession(token: string, user: User) {
   localStorage.setItem("user", JSON.stringify(user));
 }
 
+export function updateSavedUser(user: User) {
+  localStorage.setItem("user", JSON.stringify(user));
+}
+
 export function clearSession() {
   localStorage.removeItem("token");
   localStorage.removeItem("user");
