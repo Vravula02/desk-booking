@@ -1,6 +1,11 @@
 import { Router } from "express";
 import { requireAuth, requireRole } from "../auth/auth.middleware";
-import { createResource, listResources, setResourceActive, updateResource } from "./resources.service";
+import {
+  createResource,
+  listResources,
+  setResourceActive,
+  updateResource,
+} from "./resources.service";
 
 export const resourcesRouter = Router();
 
@@ -19,7 +24,7 @@ resourcesRouter.get("/", requireAuth, async (req, res, next) => {
 
 resourcesRouter.post("/", requireAuth, requireRole("admin"), async (req, res, next) => {
   try {
-    const { name, type, floor, capacity, description } = req.body ?? {};
+    const { name, type, capacity, description } = req.body ?? {};
 
     if (
       typeof name !== "string" || name.trim() === "" ||
@@ -37,7 +42,6 @@ resourcesRouter.post("/", requireAuth, requireRole("admin"), async (req, res, ne
     const resource = await createResource({
       name,
       type,
-      floor: typeof floor === "string" ? floor : undefined,
       capacity,
       description: typeof description === "string" ? description : undefined,
     });
@@ -49,13 +53,12 @@ resourcesRouter.post("/", requireAuth, requireRole("admin"), async (req, res, ne
 
 resourcesRouter.patch("/:id", requireAuth, requireRole("admin"), async (req, res, next) => {
   try {
-    const { name, type, floor, capacity, description } = req.body ?? {};
+    const { name, type, capacity, description } = req.body ?? {};
 
     const invalid =
       (name !== undefined && (typeof name !== "string" || name.trim() === "")) ||
       (type !== undefined && type !== "room" && type !== "desk") ||
       (capacity !== undefined && (!Number.isInteger(capacity) || capacity < 1)) ||
-      (floor !== undefined && typeof floor !== "string") ||
       (description !== undefined && typeof description !== "string");
 
     if (invalid) {
@@ -67,7 +70,6 @@ resourcesRouter.patch("/:id", requireAuth, requireRole("admin"), async (req, res
     const resource = await updateResource(String(req.params.id), {
       name,
       type,
-      floor,
       capacity,
       description,
     });

@@ -6,7 +6,6 @@ type Resource = {
   id: string;
   name: string;
   type: "room" | "desk";
-  floor: string | null;
   capacity: number;
   isActive: boolean;
 };

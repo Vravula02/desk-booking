@@ -47,7 +47,6 @@ model Resource {
   id          String       @id @default(uuid()) @db.Uuid
   name        String       @unique
   type        ResourceType
-  floor       String?
   capacity    Int          @default(1)
   description String?
   isActive    Boolean      @default(true) @map("is_active")

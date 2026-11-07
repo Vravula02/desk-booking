@@ -12,7 +12,6 @@ export async function listResources(includeInactive: boolean) {
 export async function createResource(input: {
   name: string;
   type: "room" | "desk";
-  floor?: string;
   capacity: number;
   description?: string;
 }) {
@@ -21,7 +20,6 @@ export async function createResource(input: {
       data: {
         name: input.name.trim(),
         type: input.type,
-        floor: input.floor,
         capacity: input.capacity,
         description: input.description,
       },
@@ -40,7 +38,6 @@ export async function updateResource(
   input: {
     name?: string;
     type?: "room" | "desk";
-    floor?: string;
     capacity?: number;
     description?: string;
   }
@@ -56,7 +53,6 @@ export async function updateResource(
       data: {
         name: input.name?.trim(),
         type: input.type,
-        floor: input.floor,
         capacity: input.capacity,
         description: input.description,
       },

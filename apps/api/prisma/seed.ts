@@ -30,11 +30,11 @@ async function main() {
   });
 
   const resources = [
-    { name: "Room A", type: "room", floor: "1", capacity: 6, description: "Projector, whiteboard" },
-    { name: "Room B", type: "room", floor: "1", capacity: 10, description: "Large conference room" },
-    { name: "Room C", type: "room", floor: "2", capacity: 4, description: "Small meeting room" },
-    { name: "Desk 1", type: "desk", floor: "2", capacity: 1, description: "Window desk" },
-    { name: "Desk 2", type: "desk", floor: "2", capacity: 1, description: "Standing desk" },
+    { name: "Room A", type: "room", capacity: 6, description: "Projector, whiteboard" },
+    { name: "Room B", type: "room", capacity: 10, description: "Large conference room" },
+    { name: "Room C", type: "room", capacity: 4, description: "Small meeting room" },
+    { name: "Desk 1", type: "desk", capacity: 1, description: "Window desk" },
+    { name: "Desk 2", type: "desk", capacity: 1, description: "Standing desk" },
   ] as const;
 
   for (const r of resources) {
