@@ -8,7 +8,6 @@ type Resource = {
   id: string;
   name: string;
   type: "room" | "desk";
-  floor: string | null;
   capacity: number;
   description: string | null;
 };
@@ -272,7 +271,6 @@ export default function SearchPage() {
                 <strong>{r.name}</strong>
                 <div className="meta">
                   {r.type}, capacity {r.capacity}
-                  {r.floor ? `, floor ${r.floor}` : ""}
                 </div>
               </div>
               <div className="row-actions">
