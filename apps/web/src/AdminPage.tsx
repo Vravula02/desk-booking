@@ -11,6 +11,28 @@ type Resource = {
   isActive: boolean;
 };
 
+type SortKey =
+  | "name-asc"
+  | "name-desc"
+  | "type"
+  | "capacity-desc"
+  | "capacity-asc"
+  | "status";
+
+// Numbers inside names sort naturally, so "Desk 2" comes before "Desk 10"
+const collator = new Intl.Collator(undefined, { numeric: true, sensitivity: "base" });
+const byName = (a: Resource, b: Resource) => collator.compare(a.name, b.name);
+
+// Every sort ends with the name, so equal items never shuffle
+const sorters: Record<SortKey, (a: Resource, b: Resource) => number> = {
+  "name-asc": byName,
+  "name-desc": (a, b) => byName(b, a),
+  type: (a, b) => (a.type === b.type ? 0 : a.type === "room" ? -1 : 1) || byName(a, b),
+  "capacity-desc": (a, b) => b.capacity - a.capacity || byName(a, b),
+  "capacity-asc": (a, b) => a.capacity - b.capacity || byName(a, b),
+  status: (a, b) => Number(b.isActive) - Number(a.isActive) || byName(a, b),
+};
+
 export default function AdminPage() {
   const [resources, setResources] = useState<Resource[]>([]);
   const [loading, setLoading] = useState(true);
@@ -19,6 +41,9 @@ export default function AdminPage() {
   const [name, setName] = useState("");
   const [type, setType] = useState("room");
   const [capacity, setCapacity] = useState("4");
+  const [sort, setSort] = useState<SortKey>("name-asc");
+  const [typeFilter, setTypeFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
 
   async function load() {
     try {
@@ -94,12 +119,27 @@ export default function AdminPage() {
     setBusyId(null);
   }
 
+  const visible = resources
+    .filter((r) => !typeFilter || r.type === typeFilter)
+    .filter(
+      (r) =>
+        !statusFilter || (statusFilter === "active" ? r.isActive : !r.isActive)
+    )
+    .sort(sorters[sort]);
+
   return (
     <div>
       <h3>Admin: resources</h3>
+
       <form onSubmit={handleCreate} className="form-row">
-        <input placeholder="Name" value={name} onChange={(e) => setName(e.target.value)} required />
-        <select value={type} onChange={(e) => setType(e.target.value)}>
+        <input
+          placeholder="Name"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          aria-label="New resource name"
+          required
+        />
+        <select value={type} onChange={(e) => setType(e.target.value)} aria-label="New resource type">
           <option value="room">Room</option>
           <option value="desk">Desk</option>
         </select>
@@ -108,6 +148,7 @@ export default function AdminPage() {
           min={1}
           value={capacity}
           onChange={(e) => setCapacity(e.target.value)}
+          aria-label="New resource capacity"
           style={{ width: 70 }}
         />
         <button type="submit" disabled={adding}>
@@ -115,22 +156,66 @@ export default function AdminPage() {
         </button>
       </form>
 
-      {loading && <p>Loading resources...</p>}
+      <div className="filters">
+        <select
+          value={sort}
+          onChange={(e) => setSort(e.target.value as SortKey)}
+          aria-label="Sort resources"
+        >
+          <option value="name-asc">Name A to Z</option>
+          <option value="name-desc">Name Z to A</option>
+          <option value="type">Type (rooms first)</option>
+          <option value="capacity-desc">Capacity, largest first</option>
+          <option value="capacity-asc">Capacity, smallest first</option>
+          <option value="status">Status (active first)</option>
+        </select>
+        <select
+          value={typeFilter}
+          onChange={(e) => setTypeFilter(e.target.value)}
+          aria-label="Filter by type"
+        >
+          <option value="">All types</option>
+          <option value="room">Rooms</option>
+          <option value="desk">Desks</option>
+        </select>
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+          aria-label="Filter by status"
+        >
+          <option value="">All statuses</option>
+          <option value="active">Active</option>
+          <option value="inactive">Inactive</option>
+        </select>
+      </div>
+
+      <p className="hint">
+        {loading
+          ? "Loading resources..."
+          : `Showing ${visible.length} of ${resources.length} resource${resources.length === 1 ? "" : "s"}`}
+      </p>
+
+      {!loading && visible.length === 0 && <p>No resources match your filters.</p>}
 
       <ul>
-        {resources.map((r) => (
+        {visible.map((r) => (
           <li key={r.id} className="row">
             <div className="row-main">
               <strong>{r.name}</strong> ({r.type}, capacity {r.capacity}){" "}
               {!r.isActive && <span className="badge badge-cancelled">inactive</span>}
             </div>
             <div className="row-actions">
-              <button disabled={busyId === r.id} onClick={() => handleEdit(r)}>
+              <button
+                disabled={busyId === r.id}
+                aria-label={`Edit capacity of ${r.name}`}
+                onClick={() => handleEdit(r)}
+              >
                 Edit capacity
               </button>
               <button
                 className={r.isActive ? "btn-danger" : ""}
                 disabled={busyId === r.id}
+                aria-label={`${r.isActive ? "Deactivate" : "Reactivate"} ${r.name}`}
                 onClick={() => handleToggle(r)}
               >
                 {r.isActive ? "Deactivate" : "Reactivate"}
