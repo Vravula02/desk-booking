@@ -58,11 +58,12 @@ export function onSessionExpired(handler: (reason: string) => void) {
   return () => window.removeEventListener(SESSION_EVENT, listener);
 }
 
-function expireSession(reason: string) {
+function expireSession(reason: string, failedToken: string | null) {
+  // A newer login in another tab means this 401 is stale, so ignore it
+  if (getToken() !== failedToken) return;
   clearSession();
   window.dispatchEvent(new CustomEvent(SESSION_EVENT, { detail: reason }));
 }
-
 export async function api<T>(path: string, options: RequestInit = {}): Promise<T> {
   const token = getToken();
   const res = await fetch(`${API_URL}${path}`, {
@@ -88,7 +89,8 @@ export async function api<T>(path: string, options: RequestInit = {}): Promise<T
       expireSession(
         code === "ACCOUNT_DEACTIVATED"
           ? "This account has been deactivated."
-          : "Your session expired. Please log in again."
+          : "Your session expired. Please log in again.",
+        token
       );
     }
     throw new Error(data?.error?.message || "Something went wrong");

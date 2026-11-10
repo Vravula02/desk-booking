@@ -7,6 +7,7 @@ import { bookingsRouter } from "./bookings/bookings.routes";
 import { availabilityRouter } from "./availability/availability.routes";
 import { config } from "./config";
 import { usersRouter } from "./users/users.routes";
+import { accountRouter } from "./account/account.routes";
 
 export const app = express();
 
@@ -26,6 +27,7 @@ app.use("/resources", resourcesRouter);
 app.use("/bookings", bookingsRouter);
 app.use("/users", usersRouter);
 app.use("/availability", availabilityRouter);
+app.use("/account", accountRouter);
 
 app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
   if (err instanceof HttpError) {

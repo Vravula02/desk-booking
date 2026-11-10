@@ -14,32 +14,37 @@ import SearchPage from "./SearchPage";
 import TimelinePage from "./TimelinePage";
 import MyBookingsPage from "./MyBookingsPage";
 import AdminSection from "./AdminSection";
+import AccountPage from "./AccountPage";
+import AccountMenu from "./AccountMenu";
+import ConfirmEmailPage from "./ConfirmEmailPage";
+import { clearConfirmFromUrl, getConfirmToken } from "./confirmEmailUrl";
 import ToastHost from "./ToastHost";
 import OfficeTimeProvider from "./OfficeTimeProvider";
 import { useOfficeTz } from "./officeTimeContext";
+import { useHashRoute, type Route } from "./useHashRoute";
 import { tzLabel } from "./time";
-
-type Tab = "search" | "timeline" | "mine" | "admin";
 
 const IDLE_MINUTES = 30;
 const CHECK_MS = 30_000;
 
 function AppInner() {
   const [user, setUser] = useState<User | null>(getSavedUser());
-  const [tab, setTab] = useState<Tab>("search");
+  const [route, navigate] = useHashRoute();
   const [sessionMessage, setSessionMessage] = useState("");
+  const [confirmToken, setConfirmToken] = useState<string | null>(getConfirmToken());
   const lastActivity = useRef(0);
   const tz = useOfficeTz();
   const userId = user?.id ?? null;
+  const isAdmin = user?.role === "admin";
 
-  // Log out on token expiry, a rejected session, or inactivity
+  // Log out on token expiry, a rejected session, or inactivity.
+  // The page stays in the URL, so logging back in returns you to it.
   useEffect(() => {
     if (!userId) return;
 
     function endSession(reason: string) {
       clearSession();
       setUser(null);
-      setTab("search");
       setSessionMessage(reason);
     }
 
@@ -69,7 +74,6 @@ function AppInner() {
     const onStorage = (e: StorageEvent) => {
       if (e.key === "token" && !e.newValue) {
         setUser(null);
-        setTab("search");
       }
     };
     window.addEventListener("storage", onStorage);
@@ -99,7 +103,6 @@ function AppInner() {
             ? me
             : prev
         );
-        if (me.role !== "admin") setTab((t) => (t === "admin" ? "search" : t));
       } catch {
         // Other requests handle an invalid session
       }
@@ -117,6 +120,29 @@ function AppInner() {
     };
   }, [userId]);
 
+  // Non-admins who open #/admin (or lose the role) go back to search
+  useEffect(() => {
+    if (userId && route === "admin" && !isAdmin) navigate("search", true);
+  }, [userId, route, isAdmin, navigate]);
+
+  if (confirmToken) {
+    return (
+      <ConfirmEmailPage
+        token={confirmToken}
+        onDone={(success) => {
+          clearConfirmFromUrl();
+          if (success) {
+            // The email change signs every session out, so clear this one too
+            clearSession();
+            setUser(null);
+            setSessionMessage("");
+          }
+          setConfirmToken(null);
+        }}
+      />
+    );
+  }
+
   if (!user) {
     return (
       <LoginPage
@@ -129,11 +155,11 @@ function AppInner() {
     );
   }
 
-  function tabButton(id: Tab, label: string) {
+  function tabButton(id: Route, label: string) {
     return (
       <button
-        className={tab === id ? "tab active" : "tab"}
-        onClick={() => setTab(id)}
+        className={route === id ? "tab active" : "tab"}
+        onClick={() => navigate(id)}
       >
         {label}
       </button>
@@ -145,36 +171,34 @@ function AppInner() {
       <ToastHost />
       <header className="app-header">
         <strong className="brand">Workspace Booking</strong>
-        <span className="header-user">
-          {user.name} ({user.role}){" "}
-          <button
-            onClick={() => {
-              clearSession();
-              setUser(null);
-              setTab("search");
-              setSessionMessage("");
-            }}
-          >
-            Log out
-          </button>
-        </span>
+        <AccountMenu
+          user={user}
+          onAccount={() => navigate("account")}
+          onLogout={() => {
+            clearSession();
+            setUser(null);
+            navigate("search", true);
+            setSessionMessage("");
+          }}
+        />
       </header>
 
       <nav className="tabs">
         {tabButton("search", "Search and book")}
         {tabButton("timeline", "Timeline")}
         {tabButton("mine", "My bookings")}
-        {user.role === "admin" && tabButton("admin", "Admin")}
+        {isAdmin && tabButton("admin", "Admin")}
       </nav>
 
       <p className="hint" style={{ margin: "0 0 12px" }}>
         All times are in {tzLabel(tz)}.
       </p>
 
-      {tab === "search" && <SearchPage />}
-      {tab === "timeline" && <TimelinePage />}
-      {tab === "mine" && <MyBookingsPage />}
-      {tab === "admin" && user.role === "admin" && <AdminSection currentUserId={user.id} />}
+      {route === "search" && <SearchPage />}
+      {route === "timeline" && <TimelinePage />}
+      {route === "mine" && <MyBookingsPage />}
+      {route === "admin" && isAdmin && <AdminSection currentUserId={user.id} />}
+      {route === "account" && <AccountPage user={user} onUserChange={setUser} />}
     </div>
   );
 }

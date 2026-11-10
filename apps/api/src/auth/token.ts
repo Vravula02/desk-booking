@@ -4,6 +4,7 @@ import { config } from "../config";
 export type TokenPayload = {
   sub: string;
   role: "employee" | "admin";
+  tv?: number;
 };
 
 export function signToken(payload: TokenPayload): string {
