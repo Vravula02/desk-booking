@@ -198,6 +198,7 @@ export default function TimelinePage() {
               <div
                 key={b.id}
                 className={classes}
+                title={`${b.title ?? "Booked"} · ${formatOfficeDateTime(b.startAt, tz)} to ${formatOfficeDateTime(b.endAt, tz)}`}
                 style={{ left: `${pct(cs)}%`, width: `${pct(ce) - pct(cs)}%` }}
                 {...activate(() => setSelected({ booking: b, resource: r.name }))}
               >

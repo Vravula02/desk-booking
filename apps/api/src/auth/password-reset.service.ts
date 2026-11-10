@@ -79,7 +79,10 @@ export async function resetPassword(token: string, newPassword: string) {
     if (claimed.count === 0) {
       throw new HttpError(400, "INVALID_OR_EXPIRED_TOKEN", "This reset link is invalid or has expired");
     }
-    await tx.user.update({ where: { id: record.userId }, data: { passwordHash } });
+      await tx.user.update({
+        where: { id: record.userId },
+        data: { passwordHash, tokenVersion: { increment: 1 } },
+    });
   });
 }
 

@@ -28,6 +28,12 @@ export async function requireAuth(req: Request, _res: Response, next: NextFuncti
       throw new HttpError(403, "ACCOUNT_DEACTIVATED", "This account has been deactivated");
     }
 
+    // Tokens issued before a password or email change carry an older version
+    const tokenVersion = typeof payload.tv === "number" ? payload.tv : 0;
+    if (tokenVersion !== user.tokenVersion) {
+      throw new HttpError(401, "UNAUTHENTICATED", "Your session is no longer valid. Please log in again.");
+    }
+
     req.user = { id: user.id, role: user.role };
     next();
   } catch (err) {

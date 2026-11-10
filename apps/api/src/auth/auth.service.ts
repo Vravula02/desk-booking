@@ -30,7 +30,7 @@ export async function registerUser(input: {
     data: { name: input.name.trim(), email, passwordHash },
   });
 
-  const token = signToken({ sub: user.id, role: user.role });
+  const token = signToken({ sub: user.id, role: user.role, tv: user.tokenVersion });
 
   return {
     user: { id: user.id, name: user.name, email: user.email, role: user.role },
@@ -53,7 +53,7 @@ export async function loginUser(input: { email: string; password: string }) {
     throw new HttpError(403, "ACCOUNT_DEACTIVATED", "This account has been deactivated");
   }
 
-  const token = signToken({ sub: user.id, role: user.role });
+  const token = signToken({ sub: user.id, role: user.role, tv: user.tokenVersion });
 
   return {
     user: { id: user.id, name: user.name, email: user.email, role: user.role },

@@ -76,16 +76,27 @@ export default function MyBookingsPage() {
     );
   }
 
-  if (loading) return <p>Loading your bookings...</p>;
+  if (loading)
+    return (
+      <div>
+        <div className="skeleton" />
+        <div className="skeleton" />
+        <div className="skeleton" />
+      </div>
+    );
 
   return (
     <div>
       <h3>Upcoming bookings</h3>
-      {upcoming.length === 0 && <p>No upcoming bookings.</p>}
+      {upcoming.length === 0 && (
+        <div className="empty">
+          No upcoming bookings. Use "Search and book" to reserve a room or desk.
+        </div>
+      )}
       <ul>{upcoming.map((b) => renderItem(b, true))}</ul>
 
       <h3>Past bookings</h3>
-      {past.length === 0 && <p>No past bookings.</p>}
+      {past.length === 0 && <div className="empty">No past bookings yet.</div>}
       <ul>{past.map((b) => renderItem(b, false))}</ul>
     </div>
   );
